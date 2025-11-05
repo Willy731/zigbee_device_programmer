@@ -117,6 +117,25 @@ class ModernTheme:
             style.map("Modern.TCombobox",
                      bordercolor=[('focus', cls.ACCENT)])
             
+            # Light-themed device dropdown (always light regardless of theme)
+            style.configure("LightDevice.TCombobox",
+                          fieldbackground=cls.LIGHT_CARD_BG,
+                          background=cls.LIGHT_CARD_BG,
+                          foreground=cls.LIGHT_TEXT_PRIMARY,
+                          borderwidth=1,
+                          relief="solid",
+                          bordercolor=cls.LIGHT_BORDER,
+                          arrowcolor=cls.LIGHT_TEXT_SECONDARY,
+                          selectbackground=cls.ACCENT,
+                          selectforeground="#ffffff",
+                          padding=(10, 8))
+            
+            style.map("LightDevice.TCombobox",
+                     fieldbackground=[('readonly', cls.LIGHT_CARD_BG)],
+                     background=[('readonly', cls.LIGHT_CARD_BG)],
+                     foreground=[('readonly', cls.LIGHT_TEXT_PRIMARY)],
+                     bordercolor=[('focus', cls.ACCENT)])
+            
             # Modern label styles
             style.configure("Heading.TLabel",
                           background=cls.DARK_BG,
@@ -204,6 +223,25 @@ class ModernTheme:
                           padding=(10, 8))
             
             style.map("Modern.TCombobox",
+                     bordercolor=[('focus', cls.ACCENT)])
+            
+            # Light-themed device dropdown (always light regardless of theme)
+            style.configure("LightDevice.TCombobox",
+                          fieldbackground=cls.LIGHT_CARD_BG,
+                          background=cls.LIGHT_CARD_BG,
+                          foreground=cls.LIGHT_TEXT_PRIMARY,
+                          borderwidth=1,
+                          relief="solid",
+                          bordercolor=cls.LIGHT_BORDER,
+                          arrowcolor=cls.LIGHT_TEXT_SECONDARY,
+                          selectbackground=cls.ACCENT,
+                          selectforeground="#ffffff",
+                          padding=(10, 8))
+            
+            style.map("LightDevice.TCombobox",
+                     fieldbackground=[('readonly', cls.LIGHT_CARD_BG)],
+                     background=[('readonly', cls.LIGHT_CARD_BG)],
+                     foreground=[('readonly', cls.LIGHT_TEXT_PRIMARY)],
                      bordercolor=[('focus', cls.ACCENT)])
             
             # Modern checkbutton style (light)
@@ -541,13 +579,6 @@ class ZigbeeProgrammerGUI:
                               bg=colors['bg'])
         title_label.pack(side=tk.LEFT)
         
-        subtitle_label = tk.Label(header_frame,
-                                 text="Modern programming interface for Zigbee devices",
-                                 font=('Segoe UI', 9),
-                                 fg=colors['text_secondary'],
-                                 bg=colors['bg'])
-        subtitle_label.pack(side=tk.LEFT, padx=(10, 0))
-        
         # Main content area with cards
         content_frame = tk.Frame(main_container, bg=colors['bg'])
         content_frame.pack(fill=tk.BOTH, expand=True)
@@ -722,7 +753,7 @@ class ZigbeeProgrammerGUI:
                                         textvariable=self.device_var,
                                         values=self.device_display_names, 
                                         state="readonly",
-                                        style="Modern.TCombobox",
+                                        style="LightDevice.TCombobox",
                                         font=('Segoe UI', 10))
         self.device_combo.pack(fill=tk.X)
         if self.device_display_names:
