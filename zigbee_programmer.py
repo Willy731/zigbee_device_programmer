@@ -10,6 +10,10 @@ import subprocess
 import threading
 import os
 import tempfile
+import shutil
+import platform
+import sys
+import ctypes
 
 
 class ZigbeeProgrammerGUI:
@@ -25,23 +29,105 @@ class ZigbeeProgrammerGUI:
         self.device_var = tk.StringVar()
         self.app_file_var = tk.StringVar()
         self.bootloader_file_var = tk.StringVar()
+        self.commander_path = None
         
         # Common Zigbee device types
         self.devices = [
-            "EFR32MG12P432F1024GL125",
-            "EFR32MG13P632F512GM48",
-            "EFR32MG21A020F1024IM32",
-            "EFR32MG24B210F1536IM48",
-            "EFR32MG24B220F1536IM48",
-            "EFR32MG24B310F1536IM48",
-            "EFR32FG14P233F256GM48",
-            "EFR32FG23A010F512GM48",
-            "EFR32FG25B220F1920IM56",
+            "MGM220PC22HNA",
+            "MGM210PA22JIA",
+            "MGM13P02F512GA",
         ]
+        
+        # Find commander executable on startup
+        self.find_commander()
         
         self.create_widgets()
         
+    def find_commander(self):
+        """Find the Simplicity Commander executable"""
+        # First check if commander is in PATH
+        commander_exe = "commander.exe" if platform.system() == "Windows" else "commander"
+        
+        if shutil.which(commander_exe):
+            self.commander_path = commander_exe
+            return True
+        
+        # If not in PATH, check common installation locations
+        if platform.system() == "Windows":
+            common_paths = [
+                r"C:\SiliconLabs\SimplicityStudio\v5\developer\adapter_packs\commander\Commander.exe",
+                r"C:\SiliconLabs\SimplicityStudio\v4\developer\adapter_packs\commander\Commander.exe",
+                r"C:\Program Files\Silicon Labs\Simplicity Studio\v5\developer\adapter_packs\commander\Commander.exe",
+                r"C:\Program Files\Silicon Labs\Simplicity Studio\v4\developer\adapter_packs\commander\Commander.exe",
+                r"C:\Program Files (x86)\Silicon Labs\Simplicity Studio\v5\developer\adapter_packs\commander\Commander.exe",
+                r"C:\Program Files (x86)\Silicon Labs\Simplicity Studio\v4\developer\adapter_packs\commander\Commander.exe",
+            ]
+        else:
+            # Linux/macOS paths
+            common_paths = [
+                "/opt/SimplicityStudio_v5/developer/adapter_packs/commander/Commander",
+                "/opt/SimplicityStudio_v4/developer/adapter_packs/commander/Commander",
+                "/Applications/Simplicity Studio.app/Contents/Eclipse/developer/adapter_packs/commander/Commander",
+            ]
+        
+        for path in common_paths:
+            if os.path.exists(path):
+                self.commander_path = path
+                return True
+        
+        return False
+    
+    def check_commander_available(self):
+        """Check if commander is available and show helpful error if not"""
+        if self.commander_path is None:
+            error_msg = (
+                "Simplicity Commander not found!\n\n"
+                "Please ensure Simplicity Commander is installed:\n"
+                "1. Install Simplicity Studio from Silicon Labs\n"
+                "2. Add Commander to your PATH, or\n"
+                "3. Install it in one of these locations:\n"
+                "   - C:\\SiliconLabs\\SimplicityStudio\\v5\\developer\\adapter_packs\\commander\\\n"
+                "   - C:\\Program Files\\Silicon Labs\\Simplicity Studio\\v5\\developer\\adapter_packs\\commander\\\n\n"
+                "You can also download Commander standalone from:\n"
+                "https://community.silabs.com/s/article/simplicity-commander\n\n"
+                "Use 'Tools > Set Commander Path' to manually specify the location."
+            )
+            messagebox.showerror("Commander Not Found", error_msg)
+            self.log("ERROR: Simplicity Commander not found. Please install it and restart the application.")
+            return False
+        
+        # Additional check: verify commander executable can run
+        try:
+            test_cmd = [self.commander_path, "--version"]
+            result = subprocess.run(test_cmd, capture_output=True, text=True, timeout=10)
+            if result.returncode != 0:
+                error_msg = (
+                    f"Commander found at {self.commander_path} but failed to execute.\n\n"
+                    "Possible issues:\n"
+                    "1. Insufficient permissions - try running as administrator\n"
+                    "2. Missing dependencies\n"
+                    "3. Corrupted installation\n\n"
+                    "Please reinstall Simplicity Commander or contact support."
+                )
+                messagebox.showerror("Commander Execution Error", error_msg)
+                self.log(f"ERROR: Commander execution failed: {result.stderr}")
+                return False
+        except Exception as e:
+            error_msg = (
+                f"Commander found at {self.commander_path} but failed to execute.\n\n"
+                f"Error: {str(e)}\n\n"
+                "Try running the application as administrator or reinstall Commander."
+            )
+            messagebox.showerror("Commander Execution Error", error_msg)
+            self.log(f"ERROR: Commander execution failed: {str(e)}")
+            return False
+        
+        return True
+        
     def create_widgets(self):
+        # Create menu bar
+        self.create_menu()
+        
         # Main container
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -102,7 +188,249 @@ class ZigbeeProgrammerGUI:
         
         # Clear log button
         row += 1
-        ttk.Button(main_frame, text="Clear Log", command=self.clear_log).grid(row=row, column=0, columnspan=3, pady=5)
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=row, column=0, columnspan=3, pady=5)
+        
+        ttk.Button(button_frame, text="Clear Log", command=self.clear_log).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Check Commander", command=self.check_commander_status).pack(side=tk.LEFT)
+        
+        # Status bar
+        row += 1
+        self.status_var = tk.StringVar()
+        self.status_label = ttk.Label(main_frame, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
+        self.status_label.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(10, 0))
+        
+        # Update status
+        self.update_status()
+        
+    def create_menu(self):
+        """Create the application menu"""
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+        
+        # Tools menu
+        tools_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label="Check Commander Status", command=self.check_commander_status)
+        tools_menu.add_command(label="Set Commander Path...", command=self.set_commander_path)
+        tools_menu.add_command(label="Test Device Connection", command=self.test_device_connection)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Refresh Commander", command=self.refresh_commander)
+        if platform.system() == "Windows":
+            tools_menu.add_separator()
+            tools_menu.add_command(label="Restart as Administrator", command=self.restart_as_admin)
+        
+        # Help menu
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="About Commander", command=self.show_commander_help)
+    
+    def set_commander_path(self):
+        """Allow user to manually set the commander path"""
+        filename = filedialog.askopenfilename(
+            title="Select Simplicity Commander Executable",
+            filetypes=[
+                ("Executable Files", "*.exe" if platform.system() == "Windows" else "*"),
+                ("All Files", "*.*")
+            ]
+        )
+        if filename and os.path.exists(filename):
+            self.commander_path = filename
+            self.log(f"Commander path set to: {filename}")
+            self.update_status()
+            messagebox.showinfo("Success", f"Commander path updated to:\n{filename}")
+    
+    def refresh_commander(self):
+        """Re-search for commander"""
+        self.log("\n=== Searching for Simplicity Commander ===")
+        if self.find_commander():
+            self.log(f"Commander found at: {self.commander_path}")
+            messagebox.showinfo("Success", f"Commander found at:\n{self.commander_path}")
+        else:
+            self.log("Commander not found in standard locations")
+            messagebox.showwarning("Not Found", "Commander not found in standard locations.\nPlease use 'Tools > Set Commander Path' to set it manually.")
+        self.update_status()
+    
+    def test_device_connection(self):
+        """Test device connection and permissions"""
+        if not self.check_commander_available():
+            return
+        
+        device = self.device_var.get()
+        if not device:
+            messagebox.showwarning("No Device Selected", "Please select a device before testing connection.")
+            return
+        
+        self.log("\n=== Testing Device Connection ===")
+        self.log(f"Testing connection to device: {device}")
+        
+        # Test with device list command
+        list_cmd = [self.commander_path, "adapter", "list"]
+        success, stdout, stderr = self.run_commander_command(list_cmd)
+        
+        if success:
+            self.log("Device adapters found:")
+            if "J-Link" in stdout or "adapter" in stdout.lower():
+                self.log("✓ J-Link adapter detected")
+                
+                # Test device-specific connection
+                probe_cmd = [self.commander_path, "adapter", "probe", "--device", device]
+                success2, stdout2, stderr2 = self.run_commander_command(probe_cmd)
+                
+                if success2:
+                    self.log(f"✓ Successfully connected to {device}")
+                    messagebox.showinfo("Success", f"Device {device} is connected and accessible!")
+                else:
+                    error_msg = (
+                        f"Found adapters but failed to connect to {device}.\n\n"
+                        "Possible issues:\n"
+                        "1. Device not connected or powered\n"
+                        "2. Wrong device type selected\n"
+                        "3. Device in use by another application\n"
+                        "4. USB driver issues\n\n"
+                        "Try:\n"
+                        "- Disconnect and reconnect the device\n"
+                        "- Close other applications using the device\n"
+                        "- Run as administrator\n"
+                        "- Check device drivers"
+                    )
+                    messagebox.showerror("Connection Failed", error_msg)
+            else:
+                error_msg = (
+                    "No compatible adapters found.\n\n"
+                    "Please ensure:\n"
+                    "1. J-Link device is connected\n"
+                    "2. USB drivers are installed\n"
+                    "3. Device is powered on\n"
+                    "4. Run as administrator if needed"
+                )
+                messagebox.showerror("No Adapters", error_msg)
+        else:
+            error_msg = (
+                "Failed to list adapters.\n\n"
+                "This usually indicates:\n"
+                "1. Permission issues - try running as administrator\n"
+                "2. Driver problems\n"
+                "3. Commander installation issues\n\n"
+                f"Error details:\n{stderr}"
+            )
+            messagebox.showerror("Adapter List Failed", error_msg)
+    
+    def restart_as_admin(self):
+        """Restart the application as administrator (Windows only)"""
+        if platform.system() != "Windows":
+            messagebox.showinfo("Not Available", "This feature is only available on Windows.")
+            return
+        
+        try:
+            # Check if already running as admin
+            if ctypes.windll.shell32.IsUserAnAdmin():
+                messagebox.showinfo("Already Administrator", "Application is already running as administrator.")
+                return
+            
+            if messagebox.askyesno("Restart as Administrator", 
+                                 "This will restart the application with administrator privileges.\n\nContinue?"):
+                # Get the current script path
+                script_path = os.path.abspath(sys.argv[0])
+                
+                # Restart with admin privileges
+                ctypes.windll.shell32.ShellExecuteW(
+                    None, "runas", sys.executable, f'"{script_path}"', None, 1
+                )
+                
+                # Close current instance
+                self.root.quit()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to restart as administrator: {str(e)}")
+    
+    def is_admin(self):
+        """Check if running as administrator (Windows only)"""
+        if platform.system() == "Windows":
+            try:
+                return ctypes.windll.shell32.IsUserAnAdmin()
+            except:
+                return False
+        return True  # Assume admin on non-Windows
+    
+    def show_commander_help(self):
+        """Show help information about commander setup"""
+        help_text = """Simplicity Commander Setup Help
+
+To use this application, you need Simplicity Commander installed:
+
+1. Download and install Simplicity Studio from Silicon Labs:
+   https://www.silabs.com/developers/simplicity-studio
+
+2. Alternatively, download Commander standalone:
+   https://community.silabs.com/s/article/simplicity-commander
+
+3. Common installation paths:
+   • C:\\SiliconLabs\\SimplicityStudio\\v5\\developer\\adapter_packs\\commander\\
+   • C:\\Program Files\\Silicon Labs\\Simplicity Studio\\v5\\developer\\adapter_packs\\commander\\
+
+4. Add Commander to your system PATH, or use 'Tools > Set Commander Path' 
+   to manually specify the location.
+
+5. Ensure your J-Link drivers are installed and the device is connected.
+
+PERMISSION ISSUES:
+If you get "access denied" or "permission" errors:
+• Run this application as Administrator
+• Ensure no other applications are using the device
+• Check that J-Link drivers are properly installed
+• Try disconnecting and reconnecting the device
+
+TROUBLESHOOTING:
+• Use 'Tools > Check Commander Status' to verify installation
+• Use 'Tools > Test Device Connection' to check device connectivity
+• Check the log output for detailed error messages
+
+For support, visit: https://community.silabs.com/"""
+        
+        messagebox.showinfo("Commander Setup Help", help_text)
+        
+    def check_commander_status(self):
+        """Check and display commander status"""
+        self.log("\n=== Checking Simplicity Commander Status ===")
+        if self.commander_path:
+            self.log(f"Commander found at: {self.commander_path}")
+            
+            # Test commander by running version command
+            try:
+                version_cmd = [self.commander_path, "--version"]
+                result = subprocess.run(version_cmd, capture_output=True, text=True, timeout=10)
+                if result.returncode == 0:
+                    self.log("Commander is working correctly!")
+                    if result.stdout:
+                        self.log(f"Version info: {result.stdout.strip()}")
+                else:
+                    self.log("Commander found but may not be working correctly")
+                    if result.stderr:
+                        self.log(f"Error: {result.stderr}")
+            except Exception as e:
+                self.log(f"Error testing commander: {e}")
+        else:
+            self.log("Commander not found!")
+            self.check_commander_available()
+        
+        self.update_status()
+    
+    def update_status(self):
+        """Update the status bar"""
+        status_parts = []
+        
+        if self.commander_path:
+            status_parts.append("Commander available")
+        else:
+            status_parts.append("Commander NOT FOUND")
+        
+        if platform.system() == "Windows":
+            if self.is_admin():
+                status_parts.append("Running as Administrator")
+            else:
+                status_parts.append("Running as User")
+        
+        self.status_var.set(" | ".join(status_parts))
         
     def browse_app_file(self):
         filename = filedialog.askopenfilename(
@@ -147,6 +475,14 @@ class ZigbeeProgrammerGUI:
         Returns:
             tuple: (success: bool, stdout: str, stderr: str)
         """
+        # Check if commander is available
+        if not self.check_commander_available():
+            return False, "", "Commander not available"
+        
+        # Replace 'commander' with actual path
+        if command[0] == "commander":
+            command[0] = self.commander_path
+        
         try:
             self.log(f"Running command: {' '.join(command)}")
             result = subprocess.run(
@@ -305,6 +641,10 @@ class ZigbeeProgrammerGUI:
     
     def program_device(self):
         """Start programming the device in a separate thread"""
+        # Check if commander is available before starting
+        if not self.check_commander_available():
+            return
+        
         # Disable the program button to prevent multiple clicks
         self.program_button.config(state="disabled")
         
