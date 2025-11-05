@@ -29,6 +29,7 @@ class ZigbeeProgrammerGUI:
         self.device_var = tk.StringVar()
         self.app_file_var = tk.StringVar()
         self.bootloader_file_var = tk.StringVar()
+        self.erase_before_flash = tk.BooleanVar()
         self.commander_path = None
         
         # Device mapping: Display name -> Actual chip name
@@ -183,7 +184,15 @@ class ZigbeeProgrammerGUI:
         
         ttk.Entry(boot_frame, textvariable=self.bootloader_file_var).grid(row=0, column=0, sticky=(tk.W, tk.E))
         ttk.Button(boot_frame, text="Browse...", command=self.browse_bootloader_file).grid(row=0, column=1, padx=(5, 0))
-        ttk.Label(main_frame, text="(Optional)", font=("", 8, "italic")).grid(row=row, column=2, sticky=tk.W, padx=(5, 0))
+        self.bootloader_optional_label = ttk.Label(main_frame, text="(Optional)", font=("", 8, "italic"))
+        self.bootloader_optional_label.grid(row=row, column=2, sticky=tk.W, padx=(5, 0))
+        
+        # Erase before flash checkbox
+        row += 1
+        self.erase_checkbox = ttk.Checkbutton(main_frame, text="Erase Before Flash", 
+                                            variable=self.erase_before_flash,
+                                            command=self.on_erase_checkbox_changed)
+        self.erase_checkbox.grid(row=row, column=1, sticky=tk.W, pady=5, padx=(5, 0))
         
         # Program button
         row += 1
@@ -528,6 +537,17 @@ For support, visit: https://community.silabs.com/"""
         else:
             self.debug_log("Bootloader file selection cancelled by user")
     
+    def on_erase_checkbox_changed(self):
+        """Handle the erase before flash checkbox state change"""
+        if self.erase_before_flash.get():
+            # When erase is checked, bootloader becomes mandatory
+            self.bootloader_optional_label.config(text="(Required for Erase)", foreground="red")
+            self.debug_log("Erase before flash enabled - bootloader is now required")
+        else:
+            # When erase is unchecked, bootloader is optional again
+            self.bootloader_optional_label.config(text="(Optional)", foreground="black")
+            self.debug_log("Erase before flash disabled - bootloader is now optional")
+    
     def log(self, message):
         """Add message to log window"""
         self.log_text.insert(tk.END, message + "\n")
@@ -560,7 +580,7 @@ For support, visit: https://community.silabs.com/"""
         self.debug_log(f"Commander path: {self.commander_path}")
         
         try:
-            self.log(f"Running command: {' '.join(command)}")
+            self.debug_log(f"Running command: {' '.join(command)}")
             
             self.debug_log(f"Timeout set to: {self.COMMANDER_TIMEOUT} seconds")
             
@@ -729,7 +749,8 @@ For support, visit: https://community.silabs.com/"""
                                 self.debug_log(f"Version comparison: {comparison_version} vs {expected_version} = {version_match}")
                                 
                                 if version_match:
-                                    self.log(f">>> ✓ VERSION MATCH: Device version {comparison_version} matches filename version {expected_version} ({match_reason}) <<<")
+                                    self.log(f">>> ✓ VERSION MATCH: Device version {comparison_version} matches filename version {expected_version} <<<")
+                                    self.debug_log(f"Version match confirmed: {comparison_version} == {expected_version} ({match_reason})")
                                     version_matches = True
                                     break
                                 else:
@@ -924,12 +945,14 @@ For support, visit: https://community.silabs.com/"""
             device = self.get_actual_device_name(device_display)
             app_file = self.app_file_var.get()
             bootloader_file = self.bootloader_file_var.get()
+            erase_before_flash = self.erase_before_flash.get()
             
             self.debug_log(f"Programming parameters:")
             self.debug_log(f"  Device display: {device_display}")
             self.debug_log(f"  Device actual: {device}")
             self.debug_log(f"  App file: {app_file}")
             self.debug_log(f"  Bootloader file: {bootloader_file}")
+            self.debug_log(f"  Erase before flash: {erase_before_flash}")
             
             # Validate inputs
             if not device_display:
@@ -947,6 +970,12 @@ For support, visit: https://community.silabs.com/"""
                 self.debug_log(f"Validation failed: Application file does not exist: {app_file}")
                 return
             
+            # Check if bootloader is required when erase is enabled
+            if erase_before_flash and not bootloader_file:
+                self.log("ERROR: Bootloader file is required when 'Erase Before Flash' is enabled")
+                self.debug_log("Validation failed: Erase enabled but no bootloader file provided")
+                return
+            
             if bootloader_file and not os.path.exists(bootloader_file):
                 self.log(f"ERROR: Bootloader file not found: {bootloader_file}")
                 self.debug_log(f"Validation failed: Bootloader file does not exist: {bootloader_file}")
@@ -957,14 +986,37 @@ For support, visit: https://community.silabs.com/"""
             self.log("\n" + "="*60)
             self.log("Starting device programming...")
             self.log(f"Device: {device_display} ({device})")
+            if erase_before_flash:
+                self.log("Erase before flash: ENABLED")
             self.log("="*60)
+            
+            # Mass erase if requested
+            if erase_before_flash:
+                self.debug_log("Mass erase sequence initiated")
+                self.log("\n=== Mass Erasing Device ===")
+                erase_cmd = [
+                    self.commander_path, "device", "masserase",
+                    "--device", device
+                ]
+                
+                self.debug_log(f"Mass erase command: {erase_cmd}")
+                success, stdout, stderr = self.run_commander_command(erase_cmd)
+                
+                if not success:
+                    self.log("ERROR: Failed to mass erase device")
+                    self.log("Aborting programming sequence")
+                    self.debug_log("Mass erase failed, aborting")
+                    return
+                
+                self.log("Device mass erased successfully!")
+                self.debug_log("Mass erase completed successfully")
             
             # Program bootloader if provided
             if bootloader_file:
                 self.debug_log("Programming bootloader sequence initiated")
                 self.log("\n=== Programming Bootloader ===")
                 boot_cmd = [
-                    "commander", "flash",
+                    self.commander_path, "flash",
                     bootloader_file,
                     "--device", device
                 ]
@@ -987,7 +1039,7 @@ For support, visit: https://community.silabs.com/"""
             self.debug_log("Programming application sequence initiated")
             self.log("\n=== Programming Application ===")
             app_cmd = [
-                "commander", "flash",
+                self.commander_path, "flash",
                 app_file,
                 "--device", device
             ]
