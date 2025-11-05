@@ -1,0 +1,13 @@
+# No external dependencies required
+# The application uses only Python standard library:
+# - tkinter (usually included with Python)
+# - subprocess
+# - threading
+# - os
+# - tempfile
+
+# Note: tkinter is included with most Python installations.
+# On Linux, if tkinter is not available, install it with:
+# Ubuntu/Debian: sudo apt-get install python3-tk
+# Fedora: sudo dnf install python3-tkinter
+# Arch: sudo pacman -S tk
