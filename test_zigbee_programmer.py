@@ -6,6 +6,7 @@ Tests the core functionality without requiring a GUI
 
 import sys
 import os
+import tempfile
 sys.path.insert(0, os.path.dirname(__file__))
 
 def test_imports():
@@ -66,7 +67,7 @@ def test_commander_commands():
         # Test command format
         device = "EFR32MG21A020F1024IM32"
         app_file = "/path/to/app.bin"
-        dump_file = "/tmp/device_dump.bin"
+        dump_file = os.path.join(tempfile.gettempdir(), "device_dump.bin")
         
         # Flash command
         flash_cmd = ["commander", "flash", app_file, "--device", device]

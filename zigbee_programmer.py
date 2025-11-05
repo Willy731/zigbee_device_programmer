@@ -13,6 +13,9 @@ import tempfile
 
 
 class ZigbeeProgrammerGUI:
+    # Constants
+    COMMANDER_TIMEOUT = 120  # Timeout for commander commands in seconds
+    
     def __init__(self, root):
         self.root = root
         self.root.title("Zigbee Device Programmer")
@@ -136,14 +139,21 @@ class ZigbeeProgrammerGUI:
         self.log_text.delete(1.0, tk.END)
     
     def run_commander_command(self, command):
-        """Run a commander command and return output"""
+        """Run a commander command and return output
+        
+        Args:
+            command: List of command arguments to pass to subprocess
+            
+        Returns:
+            tuple: (success: bool, stdout: str, stderr: str)
+        """
         try:
             self.log(f"Running command: {' '.join(command)}")
             result = subprocess.run(
                 command,
                 capture_output=True,
                 text=True,
-                timeout=120
+                timeout=self.COMMANDER_TIMEOUT
             )
             
             # Log stdout
@@ -156,7 +166,7 @@ class ZigbeeProgrammerGUI:
             
             return result.returncode == 0, result.stdout, result.stderr
         except subprocess.TimeoutExpired:
-            self.log("ERROR: Command timed out after 120 seconds")
+            self.log(f"ERROR: Command timed out after {self.COMMANDER_TIMEOUT} seconds")
             return False, "", "Timeout"
         except FileNotFoundError:
             self.log("ERROR: 'commander' not found. Please ensure Simplicity Commander is installed and in PATH")
@@ -166,11 +176,18 @@ class ZigbeeProgrammerGUI:
             return False, "", str(e)
     
     def verify_app_version(self, device):
-        """Verify application version using commander readmem and util appinfo"""
+        """Verify application version using commander readmem and util appinfo
+        
+        Args:
+            device: The device name/model to read from
+            
+        Returns:
+            bool: True if verification succeeded, False otherwise
+        """
         self.log("\n=== Verifying Application Version ===")
         
         # Create temporary file for device dump
-        with tempfile.NamedTemporaryFile(mode='wb', suffix='.bin', delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(mode='w+b', suffix='.bin', delete=False) as tmp_file:
             dump_file = tmp_file.name
         
         try:
@@ -204,8 +221,11 @@ class ZigbeeProgrammerGUI:
                 return False
         finally:
             # Clean up temporary file
-            if os.path.exists(dump_file):
-                os.remove(dump_file)
+            try:
+                if os.path.exists(dump_file):
+                    os.remove(dump_file)
+            except (OSError, PermissionError) as e:
+                self.log(f"Warning: Could not remove temporary file {dump_file}: {e}")
     
     def program_device_thread(self):
         """Thread function to program the device"""
