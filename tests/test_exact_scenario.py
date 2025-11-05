@@ -10,6 +10,9 @@ sys.path.append(os.path.dirname(__file__))
 def test_exact_scenario():
     """Test the exact scenario from the user's log"""
     
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from zigbee_programmer import ZigbeeProgrammerGUI
     import tkinter as tk
     
@@ -59,10 +62,10 @@ Even more info..."""
                     first_version_processed = True
                     
                     if parsed_version == expected_version:
-                        print(f">>> ✓ VERSION MATCH: Device version {parsed_version} matches filename version {expected_version} (string match) <<<")
+                        print(f">>> [OK] VERSION MATCH: Device version {parsed_version} matches filename version {expected_version} (string match) <<<")
                         version_matches = True
                     else:
-                        print(f">>> ✗ VERSION MISMATCH: Expected {expected_version} but device has {parsed_version} <<<")
+                        print(f">>> [X] VERSION MISMATCH: Expected {expected_version} but device has {parsed_version} <<<")
                 elif first_version_processed:
                     print(">>> (Secondary app version - not validated) <<<")
                 
@@ -80,9 +83,9 @@ Even more info..."""
     # Final verification result
     print(f"\n" + "=" * 50)
     if version_matches:
-        print(">>> ✓ VERSION VERIFICATION PASSED: Device version matches filename! <<<")
+        print(">>> [OK] VERSION VERIFICATION PASSED: Device version matches filename! <<<")
     else:
-        print(">>> ✗ VERSION VERIFICATION FAILED: Device version does not match filename! <<<")
+        print(">>> [X] VERSION VERIFICATION FAILED: Device version does not match filename! <<<")
     
     print(f"\n" + "=" * 80)
     print("Expected behavior:")

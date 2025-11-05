@@ -129,10 +129,9 @@ class ZigbeeProgrammerGUI:
         
         # Default device mapping as fallback
         default_mapping = {
-            "OSensor V3": "MGM220PC22HNA",
-            "MSensor V2": "MGM220PC22HNA", 
-            "MSensor V1": "MGM210PA22JIA",
-            "ESensor": "MGM13P02F512GA",
+            "MGM220PC22HNA": "MGM220PC22HNA",
+            "MGM210PA22JIA": "MGM210PA22JIA",
+            "MGM13P02F512GA": "MGM13P02F512GA",
         }
         
         # Try to load from custom mapping file first

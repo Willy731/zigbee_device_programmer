@@ -98,7 +98,7 @@ def test_version_parsing():
                 minor = (decimal % 1000000) // 1000
                 patch = decimal % 1000
                 verification = major * 1000000 + minor * 1000 + patch
-                print(f"Verify:   {major}.{minor}.{patch} = {verification} ({'✓' if verification == decimal else '✗'})")
+                print(f"Verify:   {major}.{minor}.{patch} = {verification} ({'[OK]' if verification == decimal else '[X]'})")
     
     print("\n" + "=" * 60)
     print("Manual calculation examples:")
@@ -125,7 +125,7 @@ def test_version_parsing():
         else:
             actual = f"{byte3}.{byte2}.{byte1}.{byte0}"
             
-        print(f"0x{hex_val:08X} ({decimal:8d}) → {actual} (expected: {expected}) {'✓' if actual == expected else '✗'}")
+        print(f"0x{hex_val:08X} ({decimal:8d}) -> {actual} (expected: {expected}) {'[OK]' if actual == expected else '[X]'}")
         print(f"    Bytes: {byte3:02X}.{byte2:02X}.{byte1:02X}.{byte0:02X}")
     
     # Test alternative parsing method (integer math)
@@ -134,11 +134,11 @@ def test_version_parsing():
     major = test_decimal // 1000000
     minor = (test_decimal % 1000000) // 1000
     patch = test_decimal % 1000
-    print(f"Decimal {test_decimal} → {major}.{minor}.{patch}")
+    print(f"Decimal {test_decimal} -> {major}.{minor}.{patch}")
     
     # Show the reverse calculation
     calculated = major * 1000000 + minor * 1000 + patch
-    print(f"Reverse: {major}.{minor}.{patch} → {calculated}")
+    print(f"Reverse: {major}.{minor}.{patch} -> {calculated}")
 
 if __name__ == "__main__":
     test_version_parsing()

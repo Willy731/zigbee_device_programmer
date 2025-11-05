@@ -7,6 +7,9 @@ import tkinter as tk
 import json
 import os
 import tempfile
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from zigbee_programmer import ZigbeeProgrammerGUI
 
 def test_menu_functionality():
@@ -19,9 +22,9 @@ def test_menu_functionality():
     try:
         # Test 1: Check initial state
         print("\nTest 1: Initial application state")
-        print(f"✓ Initial device count: {len(app.device_mapping)}")
-        print(f"✓ Initial devices: {list(app.device_mapping.keys())}")
-        print(f"✓ Custom mapping path: {app.custom_mapping_path}")
+        print(f"[OK] Initial device count: {len(app.device_mapping)}")
+        print(f"[OK] Initial devices: {list(app.device_mapping.keys())}")
+        print(f"[OK] Custom mapping path: {app.custom_mapping_path}")
         
         # Test 2: Create custom mapping and simulate menu selection
         print("\nTest 2: Simulating custom mapping file selection")
@@ -48,20 +51,20 @@ def test_menu_functionality():
         app.refresh_device_dropdown()
         app.save_settings()
         
-        print(f"✓ Custom mapping applied: {len(app.device_mapping)} devices")
-        print(f"✓ New devices: {list(app.device_mapping.keys())}")
+        print(f"[OK] Custom mapping applied: {len(app.device_mapping)} devices")
+        print(f"[OK] New devices: {list(app.device_mapping.keys())}")
         
         # Test 3: Check dropdown was updated
         print("\nTest 3: Dropdown update verification")
         dropdown_values = list(app.device_combo['values'])
-        print(f"✓ Dropdown values: {dropdown_values}")
+        print(f"[OK] Dropdown values: {dropdown_values}")
         assert dropdown_values == list(app.device_mapping.keys()), "Dropdown not updated correctly"
         
         # Test 4: Status bar update
         print("\nTest 4: Status bar update")
         app.update_status()
         status_text = app.status_var.get()
-        print(f"✓ Status bar: {status_text}")
+        print(f"[OK] Status bar: {status_text}")
         assert "Custom mapping:" in status_text, "Status bar not showing custom mapping"
         
         # Test 5: Persistence check
@@ -71,9 +74,9 @@ def test_menu_functionality():
         root2 = tk.Tk()
         app2 = ZigbeeProgrammerGUI(root2)
         
-        print(f"✓ New instance mapping path: {app2.custom_mapping_path}")
-        print(f"✓ New instance device count: {len(app2.device_mapping)}")
-        print(f"✓ New instance devices: {list(app2.device_mapping.keys())}")
+        print(f"[OK] New instance mapping path: {app2.custom_mapping_path}")
+        print(f"[OK] New instance device count: {len(app2.device_mapping)}")
+        print(f"[OK] New instance devices: {list(app2.device_mapping.keys())}")
         
         # Verify the custom mapping persisted
         assert app2.custom_mapping_path == test_file_path, "Custom mapping path not persisted"
@@ -81,7 +84,7 @@ def test_menu_functionality():
         
         root2.destroy()
         
-        print("\n✅ All menu functionality tests passed!")
+        print("\n[PASS] All menu functionality tests passed!")
         
     finally:
         # Clean up
@@ -113,14 +116,14 @@ def test_default_file_creation():
         
         # Check if default file was created
         if os.path.exists(default_file):
-            print("✓ Default device mapping file created successfully")
+            print("[OK] Default device mapping file created successfully")
             
             # Verify content
             with open(default_file, 'r') as f:
                 mapping = json.load(f)
-            print(f"✓ Default file contains {len(mapping)} devices")
+            print(f"[OK] Default file contains {len(mapping)} devices")
         else:
-            print("✗ Default device mapping file was not created")
+            print("[X] Default device mapping file was not created")
             
     finally:
         # Restore original file if it existed
@@ -132,4 +135,4 @@ def test_default_file_creation():
 if __name__ == "__main__":
     test_menu_functionality()
     test_default_file_creation()
-    print("\n🎉 All menu tests completed successfully!")
+    print("\n[SUCCESS] All menu tests completed successfully!")

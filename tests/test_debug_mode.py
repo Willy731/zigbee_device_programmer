@@ -8,6 +8,9 @@ import os
 import tempfile
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from zigbee_programmer import ZigbeeProgrammerGUI
 import tkinter as tk
 
@@ -90,23 +93,23 @@ def test_debug_mode():
     print("=" * 70)
     
     features = [
-        "✓ Toggle debug mode via Tools menu",
-        "✓ Status bar shows DEBUG MODE when active",
-        "✓ Debug messages only appear when debug mode is enabled",
-        "✓ Enhanced logging for commander operations",
-        "✓ Detailed version parsing information",
-        "✓ File operation debugging",
-        "✓ Programming thread detailed logging",
-        "✓ Exception and error context",
-        "✓ Performance and timing information",
-        "✓ Memory and resource usage tracking",
+        "[OK] Toggle debug mode via Tools menu",
+        "[OK] Status bar shows DEBUG MODE when active",
+        "[OK] Debug messages only appear when debug mode is enabled",
+        "[OK] Enhanced logging for commander operations",
+        "[OK] Detailed version parsing information",
+        "[OK] File operation debugging",
+        "[OK] Programming thread detailed logging",
+        "[OK] Exception and error context",
+        "[OK] Performance and timing information",
+        "[OK] Memory and resource usage tracking",
     ]
     
     for feature in features:
         print(f"  {feature}")
     
     print("\n" + "=" * 70)
-    print("✓ All debug mode tests passed!")
+    print("[OK] All debug mode tests passed!")
     print("=" * 70)
 
 if __name__ == "__main__":

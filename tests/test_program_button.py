@@ -6,6 +6,9 @@ Test script for the dynamic Program Device button functionality
 import tkinter as tk
 import tempfile
 import os
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from zigbee_programmer import ZigbeeProgrammerGUI
 
 def test_program_button_states():
@@ -29,7 +32,7 @@ def test_program_button_states():
         # Test Case 1: Initial state (no files selected, erase disabled)
         print("\nTest Case 1: Initial state")
         button_state = str(app.program_button.cget('state'))
-        print(f"✓ Initial button state: {button_state}")
+        print(f"[OK] Initial button state: {button_state}")
         assert button_state == 'disabled', f"Expected disabled, got {button_state}"
         
         # Test Case 2: Only app file selected, erase disabled
@@ -37,7 +40,7 @@ def test_program_button_states():
         app.app_file_var.set(app_file_path)
         app.update_program_button_state()
         button_state = str(app.program_button.cget('state'))
-        print(f"✓ Button state with app file: {button_state}")
+        print(f"[OK] Button state with app file: {button_state}")
         assert button_state == 'normal', f"Expected normal, got {button_state}"
         
         # Test Case 3: App file selected, erase enabled, no bootloader
@@ -45,7 +48,7 @@ def test_program_button_states():
         app.erase_before_flash.set(True)
         app.update_program_button_state()
         button_state = str(app.program_button.cget('state'))
-        print(f"✓ Button state with erase enabled, no bootloader: {button_state}")
+        print(f"[OK] Button state with erase enabled, no bootloader: {button_state}")
         assert button_state == 'disabled', f"Expected disabled, got {button_state}"
         
         # Test Case 4: App file selected, erase enabled, bootloader selected
@@ -53,7 +56,7 @@ def test_program_button_states():
         app.bootloader_file_var.set(boot_file_path)
         app.update_program_button_state()
         button_state = str(app.program_button.cget('state'))
-        print(f"✓ Button state with both files and erase enabled: {button_state}")
+        print(f"[OK] Button state with both files and erase enabled: {button_state}")
         assert button_state == 'normal', f"Expected normal, got {button_state}"
         
         # Test Case 5: Remove app file, should disable button
@@ -61,7 +64,7 @@ def test_program_button_states():
         app.app_file_var.set("")
         app.update_program_button_state()
         button_state = str(app.program_button.cget('state'))
-        print(f"✓ Button state with no app file: {button_state}")
+        print(f"[OK] Button state with no app file: {button_state}")
         assert button_state == 'disabled', f"Expected disabled, got {button_state}"
         
         # Test Case 6: Restore app file, remove bootloader, disable erase
@@ -71,7 +74,7 @@ def test_program_button_states():
         app.erase_before_flash.set(False)
         app.update_program_button_state()
         button_state = str(app.program_button.cget('state'))
-        print(f"✓ Button state with app file only, erase disabled: {button_state}")
+        print(f"[OK] Button state with app file only, erase disabled: {button_state}")
         assert button_state == 'normal', f"Expected normal, got {button_state}"
         
         # Test Case 7: Test with non-existent file path
@@ -79,10 +82,10 @@ def test_program_button_states():
         app.app_file_var.set("/nonexistent/file.s37")
         app.update_program_button_state()
         button_state = str(app.program_button.cget('state'))
-        print(f"✓ Button state with non-existent file: {button_state}")
+        print(f"[OK] Button state with non-existent file: {button_state}")
         assert button_state == 'disabled', f"Expected disabled, got {button_state}"
         
-        print("\n✅ All Program Device button tests passed!")
+        print("\n[PASS] All Program Device button tests passed!")
         
     finally:
         # Clean up temp files
@@ -114,10 +117,10 @@ def test_integration_with_file_dialogs():
         app.update_program_button_state()
         
         button_state = str(app.program_button.cget('state'))
-        print(f"✓ Button state after app file selection: {button_state}")
+        print(f"[OK] Button state after app file selection: {button_state}")
         assert button_state == 'normal', f"Expected normal, got {button_state}"
         
-        print("✅ Integration test passed!")
+        print("[PASS] Integration test passed!")
         
     finally:
         try:
@@ -129,4 +132,4 @@ def test_integration_with_file_dialogs():
 if __name__ == "__main__":
     test_program_button_states()
     test_integration_with_file_dialogs()
-    print("\n🎉 All tests completed successfully!")
+    print("\n[SUCCESS] All tests completed successfully!")

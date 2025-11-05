@@ -81,7 +81,7 @@ def test_filename_extraction():
             # Verify the calculation
             parts = version.split('.')
             expected = int(parts[0]) * 1000000 + int(parts[1]) * 1000 + int(parts[2])
-            print(f"Verify:    {expected} {'✓' if expected == decimal else '✗'}")
+            print(f"Verify:    {expected} {'[OK]' if expected == decimal else '[X]'}")
     
     print("\n" + "=" * 60)
     print("JavaScript comparison test:")
@@ -92,9 +92,9 @@ def test_filename_extraction():
     expected_js = 2 * 1000000 + 1 * 1000 + 7  # JavaScript: 2001007
     
     print(f"Filename:        {filename}")
-    print(f"Python result:   {version} → {decimal}")
-    print(f"JavaScript calc: 2.1.7 → {expected_js}")
-    print(f"Match:           {'✓' if decimal == expected_js else '✗'}")
+    print(f"Python result:   {version} -> {decimal}")
+    print(f"JavaScript calc: 2.1.7 -> {expected_js}")
+    print(f"Match:           {'[OK]' if decimal == expected_js else '[X]'}")
 
 if __name__ == "__main__":
     test_filename_extraction()

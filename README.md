@@ -7,16 +7,16 @@ A GUI application to program Zigbee devices using Simplicity Commander.
 The application provides a user-friendly device selection system:
 
 ### Custom Device Names
-- **OSensor V3** → `MGM220PC22HNA`
-- **MSensor V2** → `MGM220PC22HNA` 
-- **MSensor V1** → `MGM210PA22JIA`
-- **ESensor** → `MGM13P02F512GA`
+- **Occupancy Sensor** → `MGM240PB22VNA`
+- **Light V2** → `MGM24B02F1024GA` 
+- **TestSensor** → `MGM220SC22HNA`
+- **Development Board** → `BRD4001A`
 
 The dropdown shows friendly names while the actual chip names are used internally for commander calls. This makes device selection more intuitive while maintaining compatibility with the underlying hardware.
 
 ## Features
 
-- **Device Selection**: Choose from a dropdown list of user-friendly device names (OSensor V3, MSensor V2, MSensor V1, ESensor)
+- **Device Selection**: Choose from a dropdown list of user-friendly device names (Occupancy Sensor, Multi-Sensor, Light V1, Light V2)
 - **Application Programming**: Select and flash application firmware files
 - **Bootloader Programming**: Optionally flash bootloader files
 - **Real-time Logging**: View command output and programming progress
@@ -66,6 +66,63 @@ python3 zigbee_programmer.py
    - Read device memory and verify the application version
    - Parse hex version values to readable format (e.g., 0x01010005 → 1.1.5)
    - Display the verification results in the log
+
+## Testing
+
+The project includes a comprehensive test suite located in the `tests/` directory:
+
+### Running Tests
+
+1. **Run all tests**:
+```bash
+python run_tests.py
+```
+
+2. **Run individual tests**:
+```bash
+cd tests
+python test_device_mapping_json.py
+python test_erase_validation.py
+# ... etc
+```
+
+### Test Categories
+
+- **Unit Tests**: Core functionality testing
+  - `test_zigbee_programmer.py` - Main application tests
+  - `test_device_mapping.py` - Device mapping logic
+  - `test_version_parsing.py` - Version parsing algorithms
+  - `test_filename_extraction.py` - Filename version extraction
+  - `test_commander_detection.py` - Commander path detection
+
+- **Integration Tests**: End-to-end functionality
+  - `test_integration.py` - Full programming workflow
+  - `test_actual_verification.py` - Version verification
+  - `test_version_comparison.py` - Version comparison logic
+  - `test_exact_scenario.py` - Specific use cases
+
+- **GUI Tests**: User interface and interaction testing
+  - `test_debug_mode.py` - Debug mode functionality
+  - `test_erase_checkbox.py` - Erase checkbox behavior
+  - `test_erase_validation.py` - Erase validation logic
+  - `test_program_button.py` - Program button state management
+  - `test_comprehensive_button.py` - Complete button workflow
+  - `test_device_mapping_json.py` - JSON device mapping
+  - `test_menu_functionality.py` - Menu operations
+
+- **Debug and Demo Files**: Development utilities
+  - `debug_colors.py` - Color debugging utility
+  - `demo_fix.py` - Demonstration fixes
+  - `demo_version_comparison.py` - Version comparison examples
+
+### Test Results
+
+All 16 tests currently pass, providing comprehensive coverage of:
+- ✅ Core functionality validation
+- ✅ Edge case handling  
+- ✅ Error condition testing
+- ✅ User workflow simulation
+- ✅ Integration between components
 
 ## Advanced Features
 

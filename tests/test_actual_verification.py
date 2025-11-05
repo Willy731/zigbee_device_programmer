@@ -6,13 +6,13 @@ Test with simulated commander appinfo output using the actual verification metho
 import sys
 import os
 import tempfile
-sys.path.append(os.path.dirname(__file__))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from zigbee_programmer import ZigbeeProgrammerGUI
+import tkinter as tk
 
 def test_with_actual_verification():
     """Test using the actual verify_app_version method with simulated commander output"""
-    
-    from zigbee_programmer import ZigbeeProgrammerGUI
-    import tkinter as tk
     
     # Create a minimal test instance
     root = tk.Tk()
@@ -60,10 +60,10 @@ def test_with_actual_verification():
     
     # Check for match
     if comparison_version == expected_version:
-        print(f">>> ✓ VERSION MATCH: Device version {comparison_version} matches filename version {expected_version} (string match, {match_type}) <<<")
+        print(f">>> [OK] VERSION MATCH: Device version {comparison_version} matches filename version {expected_version} (string match, {match_type}) <<<")
         version_matches = True
     else:
-        print(f">>> ✗ VERSION MISMATCH: Expected {expected_version} but device has {comparison_version} ({match_type}) <<<")
+        print(f">>> [X] VERSION MISMATCH: Expected {expected_version} but device has {comparison_version} ({match_type}) <<<")
         version_matches = False
     
     # Test the second app version (should not be validated)
@@ -85,9 +85,9 @@ def test_with_actual_verification():
     # Final result
     print(f"\n" + "=" * 50)
     if version_matches:
-        print(">>> ✓ VERSION VERIFICATION PASSED: Device version matches filename! <<<")
+        print(">>> [OK] VERSION VERIFICATION PASSED: Device version matches filename! <<<")
     else:
-        print(">>> ✗ VERSION VERIFICATION FAILED: Device version does not match filename! <<<")
+        print(">>> [X] VERSION VERIFICATION FAILED: Device version does not match filename! <<<")
     
     print(f"\n" + "=" * 80)
     print("Results:")
@@ -95,7 +95,7 @@ def test_with_actual_verification():
     print(f"• Device byte parsing: {parsed1}")
     print(f"• Device int math: {int_version}")
     print(f"• Comparison used: {comparison_version} ({match_type})")
-    print(f"• Match result: {'✓ PASS' if version_matches else '✗ FAIL'}")
+    print(f"• Match result: {'[OK] PASS' if version_matches else '[X] FAIL'}")
     print("=" * 80)
     
     root.destroy()

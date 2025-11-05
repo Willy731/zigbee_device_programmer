@@ -7,6 +7,9 @@ import tkinter as tk
 import json
 import os
 import tempfile
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from zigbee_programmer import ZigbeeProgrammerGUI
 
 def test_device_mapping_json():
@@ -27,8 +30,8 @@ def test_device_mapping_json():
     try:
         # Test 1: Check default mapping loads
         print("\nTest 1: Default mapping loaded")
-        print(f"✓ Loaded {len(app.device_mapping)} devices from default mapping")
-        print(f"✓ Device names: {list(app.device_mapping.keys())}")
+        print(f"[OK] Loaded {len(app.device_mapping)} devices from default mapping")
+        print(f"[OK] Device names: {list(app.device_mapping.keys())}")
         
         # Test 2: Create and load custom mapping
         print("\nTest 2: Custom mapping file creation and loading")
@@ -47,14 +50,14 @@ def test_device_mapping_json():
         app.device_display_names = list(app.device_mapping.keys())
         app.refresh_device_dropdown()
         
-        print(f"✓ Custom mapping loaded: {len(app.device_mapping)} devices")
-        print(f"✓ Custom device names: {list(app.device_mapping.keys())}")
+        print(f"[OK] Custom mapping loaded: {len(app.device_mapping)} devices")
+        print(f"[OK] Custom device names: {list(app.device_mapping.keys())}")
         
         # Test 3: Check device name resolution
         print("\nTest 3: Device name resolution")
         for display_name, expected_chip in test_mapping.items():
             actual_chip = app.get_actual_device_name(display_name)
-            print(f"✓ {display_name} → {actual_chip}")
+            print(f"[OK] {display_name} -> {actual_chip}")
             assert actual_chip == expected_chip, f"Expected {expected_chip}, got {actual_chip}"
         
         # Test 4: Settings save/load
@@ -65,15 +68,15 @@ def test_device_mapping_json():
         root2 = tk.Tk()
         app2 = ZigbeeProgrammerGUI(root2)
         
-        print(f"✓ Settings loaded in new instance: custom_mapping_path = {app2.custom_mapping_path}")
+        print(f"[OK] Settings loaded in new instance: custom_mapping_path = {app2.custom_mapping_path}")
         if app2.custom_mapping_path == test_file_path:
-            print("✓ Custom mapping path persisted correctly")
+            print("[OK] Custom mapping path persisted correctly")
         else:
-            print(f"✗ Expected {test_file_path}, got {app2.custom_mapping_path}")
+            print(f"[X] Expected {test_file_path}, got {app2.custom_mapping_path}")
         
         root2.destroy()
         
-        print("\n✅ All JSON device mapping tests passed!")
+        print("\n[PASS] All JSON device mapping tests passed!")
         
     finally:
         # Clean up
@@ -104,8 +107,8 @@ def test_json_error_handling():
         # This should fall back to default mapping
         app.load_device_mapping()
         
-        print("✓ Invalid JSON handled gracefully")
-        print(f"✓ Fell back to mapping with {len(app.device_mapping)} devices")
+        print("[OK] Invalid JSON handled gracefully")
+        print(f"[OK] Fell back to mapping with {len(app.device_mapping)} devices")
         
     finally:
         try:
@@ -118,4 +121,4 @@ def test_json_error_handling():
 if __name__ == "__main__":
     test_device_mapping_json()
     test_json_error_handling()
-    print("\n🎉 All tests completed successfully!")
+    print("\n[SUCCESS] All tests completed successfully!")

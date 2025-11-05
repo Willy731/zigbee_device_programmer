@@ -7,7 +7,7 @@ Tests the core functionality without requiring a GUI
 import sys
 import os
 import tempfile
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def test_imports():
     """Test that all required modules can be imported"""
@@ -19,10 +19,10 @@ def test_imports():
         import threading
         import os
         import tempfile
-        print("✓ All imports successful")
+        print("[OK] All imports successful")
         return True
     except ImportError as e:
-        print(f"✗ Import failed: {e}")
+        print(f"[X] Import failed: {e}")
         return False
 
 def test_class_structure():
@@ -31,11 +31,11 @@ def test_class_structure():
     try:
         # We can't actually create the GUI without a display, but we can import the class
         import zigbee_programmer
-        print("✓ Module imports successfully")
-        print("✓ ZigbeeProgrammerGUI class is defined")
+        print("[OK] Module imports successfully")
+        print("[OK] ZigbeeProgrammerGUI class is defined")
         return True
     except Exception as e:
-        print(f"✗ Class structure test failed: {e}")
+        print(f"[X] Class structure test failed: {e}")
         return False
 
 def test_device_list():
@@ -51,13 +51,13 @@ def test_device_list():
         
         for method in expected_methods:
             if not hasattr(zigbee_programmer.ZigbeeProgrammerGUI, method):
-                print(f"✗ Missing method: {method}")
+                print(f"[X] Missing method: {method}")
                 return False
         
-        print("✓ All expected methods are defined")
+        print("[OK] All expected methods are defined")
         return True
     except Exception as e:
-        print(f"✗ Device list test failed: {e}")
+        print(f"[X] Device list test failed: {e}")
         return False
 
 def test_commander_commands():
@@ -82,10 +82,10 @@ def test_commander_commands():
         appinfo_cmd = ["commander", "util", "appinfo", dump_file]
         print(f"  Appinfo command: {' '.join(appinfo_cmd)}")
         
-        print("✓ Command structures are correct")
+        print("[OK] Command structures are correct")
         return True
     except Exception as e:
-        print(f"✗ Commander command test failed: {e}")
+        print(f"[X] Commander command test failed: {e}")
         return False
 
 def main():
@@ -109,10 +109,10 @@ def main():
     print("=" * 60)
     
     if all(results):
-        print("\n✓ All tests passed!")
+        print("\n[OK] All tests passed!")
         return 0
     else:
-        print("\n✗ Some tests failed")
+        print("\n[X] Some tests failed")
         return 1
 
 if __name__ == "__main__":

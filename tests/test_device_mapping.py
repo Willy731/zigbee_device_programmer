@@ -8,6 +8,9 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from zigbee_programmer import ZigbeeProgrammerGUI
 import tkinter as tk
 
@@ -43,7 +46,7 @@ def test_device_mapping():
     print(f"\nFallback test: '{unknown_device}' -> '{fallback_result}'")
     assert fallback_result == unknown_device, "Fallback behavior failed"
     
-    print("\n✓ All device mapping tests passed!")
+    print("\n[OK] All device mapping tests passed!")
     
     root.destroy()
 

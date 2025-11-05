@@ -6,6 +6,9 @@ Comprehensive test for the complete erase checkbox and button state integration
 import tkinter as tk
 import tempfile
 import os
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from zigbee_programmer import ZigbeeProgrammerGUI
 
 def test_complete_workflow():
@@ -84,7 +87,7 @@ def test_complete_workflow():
         print(f"   - Program button: {str(app.program_button.cget('state'))}")
         assert str(app.program_button.cget('state')) == 'disabled'
         
-        print("\n✅ Complete workflow test passed!")
+        print("\n[PASS] Complete workflow test passed!")
         
     finally:
         try:
@@ -117,7 +120,7 @@ def test_edge_cases():
         app.update_program_button_state()
         assert str(app.program_button.cget('state')) == 'disabled'
         
-        print("✅ Edge cases test passed!")
+        print("[PASS] Edge cases test passed!")
         
     finally:
         root.destroy()
@@ -125,4 +128,4 @@ def test_edge_cases():
 if __name__ == "__main__":
     test_complete_workflow()
     test_edge_cases()
-    print("\n🎉 All comprehensive tests completed successfully!")
+    print("\n[SUCCESS] All comprehensive tests completed successfully!")

@@ -6,6 +6,9 @@ Test script for the erase validation logic
 import tkinter as tk
 import tempfile
 import os
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from zigbee_programmer import ZigbeeProgrammerGUI
 
 def test_erase_validation():
@@ -28,7 +31,7 @@ def test_erase_validation():
     try:
         # Test Case 1: Erase enabled but no bootloader file
         print("\nTest Case 1: Erase enabled but no bootloader file")
-        app.device_var.set("OSensor V3")
+        app.device_var.set("MGM24B02F1024GA")
         app.app_file_var.set(app_file_path)
         app.bootloader_file_var.set("")
         app.erase_before_flash.set(True)
@@ -60,9 +63,9 @@ def test_erase_validation():
         
         expected_fail = True
         if validation_passed == (not expected_fail):
-            print(f"✓ Validation correctly failed: {error_message}")
+            print(f"[OK] Validation correctly failed: {error_message}")
         else:
-            print(f"✗ Validation should have failed but passed")
+            print(f"[X] Validation should have failed but passed")
         
         # Test Case 2: Erase enabled with bootloader file
         print("\nTest Case 2: Erase enabled with bootloader file")
@@ -91,9 +94,9 @@ def test_erase_validation():
         
         expected_pass = True
         if validation_passed == expected_pass:
-            print(f"✓ Validation correctly passed")
+            print(f"[OK] Validation correctly passed")
         else:
-            print(f"✗ Validation should have passed but failed: {error_message}")
+            print(f"[X] Validation should have passed but failed: {error_message}")
         
         # Test Case 3: Erase disabled, no bootloader (should pass)
         print("\nTest Case 3: Erase disabled, no bootloader file")
@@ -124,11 +127,11 @@ def test_erase_validation():
         
         expected_pass = True
         if validation_passed == expected_pass:
-            print(f"✓ Validation correctly passed")
+            print(f"[OK] Validation correctly passed")
         else:
-            print(f"✗ Validation should have passed but failed: {error_message}")
+            print(f"[X] Validation should have passed but failed: {error_message}")
         
-        print("\n✓ All erase validation tests completed!")
+        print("\n[OK] All erase validation tests completed!")
         
     finally:
         # Clean up temp files

@@ -16,10 +16,10 @@ def find_commander():
     
     commander_in_path = shutil.which(commander_exe)
     if commander_in_path:
-        print(f"✓ Commander found in PATH: {commander_in_path}")
+        print(f"[OK] Commander found in PATH: {commander_in_path}")
         return commander_in_path
     else:
-        print("✗ Commander not found in PATH")
+        print("[X] Commander not found in PATH")
     
     # If not in PATH, check common installation locations
     if platform.system() == "Windows":
@@ -42,12 +42,12 @@ def find_commander():
     print("\nChecking common installation locations:")
     for path in common_paths:
         if os.path.exists(path):
-            print(f"✓ Found commander at: {path}")
+            print(f"[OK] Found commander at: {path}")
             return path
         else:
-            print(f"✗ Not found: {path}")
+            print(f"[X] Not found: {path}")
     
-    print("\n❌ Commander not found in any standard location")
+    print("\n[FAIL] Commander not found in any standard location")
     return None
 
 def main():
@@ -59,12 +59,12 @@ def main():
     
     print("\n" + "=" * 60)
     if commander_path:
-        print(f"✅ SUCCESS: Commander detected at {commander_path}")
+        print(f"[PASS] SUCCESS: Commander detected at {commander_path}")
         print("\nRecommendations:")
         print("1. The application should work correctly")
         print("2. Test the commander by running: commander --version")
     else:
-        print("❌ FAILED: Commander not detected")
+        print("[FAIL] FAILED: Commander not detected")
         print("\nRecommendations:")
         print("1. Install Simplicity Studio from Silicon Labs")
         print("2. Add commander to your system PATH")

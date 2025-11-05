@@ -12,6 +12,9 @@ def test_version_comparison():
     
     # Import from the main module
     try:
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         from zigbee_programmer import ZigbeeProgrammerGUI
         import tkinter as tk
     except ImportError as e:
@@ -69,10 +72,10 @@ def test_version_comparison():
             print(f"Trailing .0 match: {trailing_zero_match}")
             print(f"Overall result:   {'MATCH' if any_match else 'NO MATCH'}")
             print(f"Expected result:  {'MATCH' if should_match else 'NO MATCH'}")
-            print(f"Test result:      {'✓ PASS' if (any_match == should_match) else '✗ FAIL'}")
+            print(f"Test result:      {'[OK] PASS' if (any_match == should_match) else '[X] FAIL'}")
         else:
             print("Could not parse one or both versions")
-            print(f"Test result:      {'✗ FAIL' if should_match else '? INCONCLUSIVE'}")
+            print(f"Test result:      {'[X] FAIL' if should_match else '? INCONCLUSIVE'}")
     
     # Test edge cases
     print(f"\n{'=' * 70}")

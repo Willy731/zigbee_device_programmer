@@ -10,7 +10,7 @@ def test_version_parsing_integration():
     # Import the parsing function from the main module
     import sys
     import os
-    sys.path.append(os.path.dirname(__file__))
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
     from zigbee_programmer import ZigbeeProgrammerGUI
     import tkinter as tk
@@ -52,7 +52,7 @@ def test_version_parsing_integration():
                         int_patch = decimal % 1000
                         int_version = f"{int_major}.{int_minor}.{int_patch}"
                         print(f"  Int math: {int_version}")
-                        print(f"  Match: {'✓' if int_version == parsed else '✗'}")
+                        print(f"  Match: {'[OK]' if int_version == parsed else '[X]'}")
     
     root.destroy()
     print("\n" + "=" * 60)

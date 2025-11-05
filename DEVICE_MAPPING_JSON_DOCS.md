@@ -8,10 +8,12 @@ The Zigbee Device Programmer now supports customizable device mappings through J
 ### 1. `device_mapping.json` (Default mapping file)
 ```json
 {
-    "OSensor V3": "MGM220PC22HNA",
-    "MSensor V2": "MGM220PC22HNA",
-    "MSensor V1": "MGM210PA22JIA",
-    "ESensor": "MGM13P02F512GA"
+    "Occupancy Sensor": "MGM240PB22VNA",
+    "Multi-Sensor": "MGM240PB22VNA",
+    "Light V2": "MGM24B02F1024GA",
+    "Light V1": "MGM220SC22HNA",
+    "TestSensor": "MGM220SC22HNA",
+    "Development Board": "BRD4001A"
 }
 ```
 
@@ -19,13 +21,9 @@ The Zigbee Device Programmer now supports customizable device mappings through J
 ```json
 {
     "OSensor V4": "MGM240PB22VNA",
-    "MSensor V3": "MGM240PB22VNA",
-    "MSensor V2": "MGM220PC22HNA",
-    "MSensor V1": "MGM210PA22JIA",
-    "ESensor V2": "MGM24B02F1024GA",
-    "ESensor V1": "MGM13P02F512GA",
-    "TestSensor": "MGM220SC22HNA",
-    "Development Board": "BRD4001A"
+    "Mack Sensor": "MGM240PB22VNA",
+    "Trash Lid Reporter": "MGM24B02F1024GA",
+    "Door Controller": "MGM24B02F1024GA"
 }
 ```
 
