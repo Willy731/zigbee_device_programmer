@@ -230,6 +230,9 @@ class ZigbeeProgrammerGUI:
         # Update status
         self.update_status()
         
+        # Initialize program button state
+        self.update_program_button_state()
+        
     def create_menu(self):
         """Create the application menu"""
         menubar = tk.Menu(self.root)
@@ -519,6 +522,9 @@ For support, visit: https://community.silabs.com/"""
             self.debug_log(f"File extension: {os.path.splitext(filename)[1]}")
         else:
             self.debug_log("Application file selection cancelled by user")
+        
+        # Update program button state
+        self.update_program_button_state()
     
     def browse_bootloader_file(self):
         filename = filedialog.askopenfilename(
@@ -536,6 +542,9 @@ For support, visit: https://community.silabs.com/"""
             self.debug_log(f"File extension: {os.path.splitext(filename)[1]}")
         else:
             self.debug_log("Bootloader file selection cancelled by user")
+        
+        # Update program button state
+        self.update_program_button_state()
     
     def on_erase_checkbox_changed(self):
         """Handle the erase before flash checkbox state change"""
@@ -547,6 +556,41 @@ For support, visit: https://community.silabs.com/"""
             # When erase is unchecked, bootloader is optional again
             self.bootloader_optional_label.config(text="(Optional)", foreground="black")
             self.debug_log("Erase before flash disabled - bootloader is now optional")
+        
+        # Update program button state
+        self.update_program_button_state()
+    
+    def update_program_button_state(self):
+        """Enable/disable the Program Device button based on current selections"""
+        app_file = self.app_file_var.get().strip()
+        bootloader_file = self.bootloader_file_var.get().strip()
+        erase_enabled = self.erase_before_flash.get()
+        
+        # Check if application file is selected
+        app_file_valid = bool(app_file and os.path.exists(app_file))
+        
+        # Check if bootloader is required and valid
+        if erase_enabled:
+            # When erase is enabled, bootloader is mandatory
+            bootloader_valid = bool(bootloader_file and os.path.exists(bootloader_file))
+            should_enable = app_file_valid and bootloader_valid
+        else:
+            # When erase is disabled, bootloader is optional - just need app file
+            should_enable = app_file_valid
+        
+        # Update button state
+        if should_enable:
+            self.program_button.config(state="normal")
+            self.debug_log("Program button enabled")
+        else:
+            self.program_button.config(state="disabled")
+            self.debug_log("Program button disabled")
+            
+            # Log why it's disabled for debugging
+            if not app_file_valid:
+                self.debug_log("  Reason: No valid application file selected")
+            if erase_enabled and not bootloader_valid:
+                self.debug_log("  Reason: Erase enabled but no valid bootloader file selected")
     
     def log(self, message):
         """Add message to log window"""
