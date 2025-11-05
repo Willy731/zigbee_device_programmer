@@ -489,39 +489,71 @@ class ZigbeeProgrammerGUI:
             return False
         
         return True
+    
+    def get_theme_colors(self):
+        """Get current theme colors"""
+        if self.current_theme == "dark":
+            return {
+                'bg': ModernTheme.DARK_BG,
+                'card_bg': ModernTheme.CARD_BG,
+                'darker_bg': ModernTheme.DARKER_BG,
+                'text_primary': ModernTheme.TEXT_PRIMARY,
+                'text_secondary': ModernTheme.TEXT_SECONDARY,
+                'border': ModernTheme.BORDER,
+                'accent': ModernTheme.ACCENT,
+                'success': ModernTheme.SUCCESS,
+                'warning': ModernTheme.WARNING,
+                'error': ModernTheme.ERROR
+            }
+        else:
+            return {
+                'bg': ModernTheme.LIGHT_BG,
+                'card_bg': ModernTheme.LIGHT_CARD_BG,
+                'darker_bg': ModernTheme.LIGHT_CARD_BG,
+                'text_primary': ModernTheme.LIGHT_TEXT_PRIMARY,
+                'text_secondary': ModernTheme.LIGHT_TEXT_SECONDARY,
+                'border': ModernTheme.LIGHT_BORDER,
+                'accent': ModernTheme.ACCENT,
+                'success': ModernTheme.SUCCESS,
+                'warning': ModernTheme.WARNING,
+                'error': ModernTheme.ERROR
+            }
         
     def create_widgets(self):
+        # Get current theme colors
+        colors = self.get_theme_colors()
+        
         # Create modern menu bar
         self.create_menu()
         
         # Main container with modern styling
-        main_container = tk.Frame(self.root, bg=ModernTheme.DARK_BG)
+        main_container = tk.Frame(self.root, bg=colors['bg'])
         main_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
         
         # Header section (more compact)
-        header_frame = tk.Frame(main_container, bg=ModernTheme.DARK_BG)
+        header_frame = tk.Frame(main_container, bg=colors['bg'])
         header_frame.pack(fill=tk.X, pady=(0, 15))
         
         title_label = tk.Label(header_frame, 
                               text="Zigbee Device Programmer", 
                               font=('Segoe UI', 16, 'bold'),
-                              fg=ModernTheme.TEXT_PRIMARY,
-                              bg=ModernTheme.DARK_BG)
+                              fg=colors['text_primary'],
+                              bg=colors['bg'])
         title_label.pack(side=tk.LEFT)
         
         subtitle_label = tk.Label(header_frame,
                                  text="Modern programming interface for Zigbee devices",
                                  font=('Segoe UI', 9),
-                                 fg=ModernTheme.TEXT_SECONDARY,
-                                 bg=ModernTheme.DARK_BG)
+                                 fg=colors['text_secondary'],
+                                 bg=colors['bg'])
         subtitle_label.pack(side=tk.LEFT, padx=(10, 0))
         
         # Main content area with cards
-        content_frame = tk.Frame(main_container, bg=ModernTheme.DARK_BG)
+        content_frame = tk.Frame(main_container, bg=colors['bg'])
         content_frame.pack(fill=tk.BOTH, expand=True)
         
         # Left panel for configuration (fixed width)
-        left_panel = tk.Frame(content_frame, bg=ModernTheme.DARK_BG, width=450)
+        left_panel = tk.Frame(content_frame, bg=colors['bg'], width=450)
         left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
         left_panel.pack_propagate(False)
         
@@ -538,25 +570,8 @@ class ZigbeeProgrammerGUI:
         self.create_action_buttons_card(left_panel)
         
         # Right panel for log output
-        right_panel = tk.Frame(content_frame, bg=ModernTheme.DARK_BG)
+        right_panel = tk.Frame(content_frame, bg=colors['bg'])
         right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-        
-        # Device Configuration Card
-        self.create_device_config_card(left_panel)
-        
-        # File Selection Card
-        self.create_file_selection_card(left_panel)
-        
-        # Programming Options Card
-        self.create_programming_options_card(left_panel)
-        
-        # Action Buttons Card
-        self.create_action_buttons_card(left_panel)
-        
-        # Right panel for log output
-        right_panel = tk.Frame(content_frame, bg=ModernTheme.DARK_BG, width=400)
-        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-        right_panel.pack_propagate(False)
         
         # Log Output Card
         self.create_log_output_card(right_panel)
@@ -601,17 +616,18 @@ class ZigbeeProgrammerGUI:
     
     def create_device_config_card(self, parent):
         """Create device configuration card"""
+        colors = self.get_theme_colors()
         card_content = self.create_card_frame(parent, "Device Configuration")
         
         # Device selection with modern styling (reduced padding)
-        device_frame = tk.Frame(card_content, bg=ModernTheme.CARD_BG)
+        device_frame = tk.Frame(card_content, bg=colors['card_bg'])
         device_frame.pack(fill=tk.X, padx=15, pady=12)
         
         device_label = tk.Label(device_frame,
                                text="Target Device",
                                font=('Segoe UI', 9, 'bold'),
-                               fg=ModernTheme.TEXT_PRIMARY,
-                               bg=ModernTheme.CARD_BG)
+                               fg=colors['text_primary'],
+                               bg=colors['card_bg'])
         device_label.pack(anchor=tk.W, pady=(0, 4))
         
         self.device_combo = ttk.Combobox(device_frame, 
@@ -626,33 +642,34 @@ class ZigbeeProgrammerGUI:
     
     def create_file_selection_card(self, parent):
         """Create file selection card"""
+        colors = self.get_theme_colors()
         card_content = self.create_card_frame(parent, "File Selection")
         
         # Application file selection (reduced padding)
-        app_frame = tk.Frame(card_content, bg=ModernTheme.CARD_BG)
+        app_frame = tk.Frame(card_content, bg=colors['card_bg'])
         app_frame.pack(fill=tk.X, padx=15, pady=(12, 8))
         
         app_label = tk.Label(app_frame,
                             text="Application File",
                             font=('Segoe UI', 9, 'bold'),
-                            fg=ModernTheme.TEXT_PRIMARY,
-                            bg=ModernTheme.CARD_BG)
+                            fg=colors['text_primary'],
+                            bg=colors['card_bg'])
         app_label.pack(anchor=tk.W, pady=(0, 4))
         
-        app_input_frame = tk.Frame(app_frame, bg=ModernTheme.CARD_BG)
+        app_input_frame = tk.Frame(app_frame, bg=colors['card_bg'])
         app_input_frame.pack(fill=tk.X)
         
         self.app_entry = tk.Entry(app_input_frame,
                                  textvariable=self.app_file_var,
                                  font=('Segoe UI', 10),
-                                 bg=ModernTheme.CARD_BG,
-                                 fg=ModernTheme.TEXT_PRIMARY,
-                                 insertbackground=ModernTheme.TEXT_PRIMARY,
+                                 bg=colors['card_bg'],
+                                 fg=colors['text_primary'],
+                                 insertbackground=colors['text_primary'],
                                  bd=1,
                                  relief='solid',
                                  highlightthickness=1,
-                                 highlightcolor=ModernTheme.ACCENT,
-                                 highlightbackground=ModernTheme.BORDER)
+                                 highlightcolor=colors['accent'],
+                                 highlightbackground=colors['border'])
         self.app_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         
         app_browse_btn = ttk.Button(app_input_frame,
@@ -662,40 +679,40 @@ class ZigbeeProgrammerGUI:
         app_browse_btn.pack(side=tk.RIGHT)
         
         # Bootloader file selection (reduced padding)
-        boot_frame = tk.Frame(card_content, bg=ModernTheme.CARD_BG)
+        boot_frame = tk.Frame(card_content, bg=colors['card_bg'])
         boot_frame.pack(fill=tk.X, padx=15, pady=(8, 12))
         
-        boot_label_frame = tk.Frame(boot_frame, bg=ModernTheme.CARD_BG)
+        boot_label_frame = tk.Frame(boot_frame, bg=colors['card_bg'])
         boot_label_frame.pack(fill=tk.X, pady=(0, 4))
         
         boot_label = tk.Label(boot_label_frame,
                              text="Bootloader File",
                              font=('Segoe UI', 9, 'bold'),
-                             fg=ModernTheme.TEXT_PRIMARY,
-                             bg=ModernTheme.CARD_BG)
+                             fg=colors['text_primary'],
+                             bg=colors['card_bg'])
         boot_label.pack(side=tk.LEFT)
         
         self.bootloader_optional_label = tk.Label(boot_label_frame,
                                                   text="(Optional)",
                                                   font=('Segoe UI', 8, 'italic'),
-                                                  fg=ModernTheme.TEXT_SECONDARY,
-                                                  bg=ModernTheme.CARD_BG)
+                                                  fg=colors['text_secondary'],
+                                                  bg=colors['card_bg'])
         self.bootloader_optional_label.pack(side=tk.LEFT, padx=(5, 0))
         
-        boot_input_frame = tk.Frame(boot_frame, bg=ModernTheme.CARD_BG)
+        boot_input_frame = tk.Frame(boot_frame, bg=colors['card_bg'])
         boot_input_frame.pack(fill=tk.X)
         
         self.boot_entry = tk.Entry(boot_input_frame,
                                   textvariable=self.bootloader_file_var,
                                   font=('Segoe UI', 10),
-                                  bg=ModernTheme.CARD_BG,
-                                  fg=ModernTheme.TEXT_PRIMARY,
-                                  insertbackground=ModernTheme.TEXT_PRIMARY,
+                                  bg=colors['card_bg'],
+                                  fg=colors['text_primary'],
+                                  insertbackground=colors['text_primary'],
                                   bd=1,
                                   relief='solid',
                                   highlightthickness=1,
-                                  highlightcolor=ModernTheme.ACCENT,
-                                  highlightbackground=ModernTheme.BORDER)
+                                  highlightcolor=colors['accent'],
+                                  highlightbackground=colors['border'])
         self.boot_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         
         boot_browse_btn = ttk.Button(boot_input_frame,
@@ -706,9 +723,10 @@ class ZigbeeProgrammerGUI:
     
     def create_programming_options_card(self, parent):
         """Create programming options card"""
+        colors = self.get_theme_colors()
         card_content = self.create_card_frame(parent, "Programming Options")
         
-        options_frame = tk.Frame(card_content, bg=ModernTheme.CARD_BG)
+        options_frame = tk.Frame(card_content, bg=colors['card_bg'])
         options_frame.pack(fill=tk.X, padx=15, pady=12)
         
         self.erase_checkbox = ttk.Checkbutton(options_frame,
@@ -721,15 +739,16 @@ class ZigbeeProgrammerGUI:
         erase_info = tk.Label(options_frame,
                              text="Performs a full device erase before programming",
                              font=('Segoe UI', 8),
-                             fg=ModernTheme.TEXT_SECONDARY,
-                             bg=ModernTheme.CARD_BG)
+                             fg=colors['text_secondary'],
+                             bg=colors['card_bg'])
         erase_info.pack(anchor=tk.W, pady=(3, 0))
     
     def create_action_buttons_card(self, parent):
         """Create action buttons card"""
+        colors = self.get_theme_colors()
         card_content = self.create_card_frame(parent, "Actions")
         
-        button_frame = tk.Frame(card_content, bg=ModernTheme.CARD_BG)
+        button_frame = tk.Frame(card_content, bg=colors['card_bg'])
         button_frame.pack(fill=tk.X, padx=15, pady=12)
         
         # Primary program button
@@ -740,7 +759,7 @@ class ZigbeeProgrammerGUI:
         self.program_button.pack(fill=tk.X, pady=(0, 8))
         
         # Secondary action buttons
-        secondary_frame = tk.Frame(button_frame, bg=ModernTheme.CARD_BG)
+        secondary_frame = tk.Frame(button_frame, bg=colors['card_bg'])
         secondary_frame.pack(fill=tk.X)
         
         check_btn = ttk.Button(secondary_frame,
@@ -757,29 +776,30 @@ class ZigbeeProgrammerGUI:
     
     def create_log_output_card(self, parent):
         """Create log output card"""
+        colors = self.get_theme_colors()
         card_content = self.create_card_frame(parent, "Log Output")
         
-        log_frame = tk.Frame(card_content, bg=ModernTheme.CARD_BG)
+        log_frame = tk.Frame(card_content, bg=colors['card_bg'])
         log_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=12)
         
         # Create custom styled text widget
         self.log_text = tk.Text(log_frame,
                                wrap=tk.WORD,
                                font=('Consolas', 9),
-                               bg=ModernTheme.DARKER_BG,
-                               fg=ModernTheme.TEXT_PRIMARY,
-                               insertbackground=ModernTheme.TEXT_PRIMARY,
-                               selectbackground=ModernTheme.ACCENT,
-                               selectforeground=ModernTheme.TEXT_PRIMARY,
+                               bg=colors['darker_bg'],
+                               fg=colors['text_primary'],
+                               insertbackground=colors['text_primary'],
+                               selectbackground=colors['accent'],
+                               selectforeground=colors['text_primary'],
                                bd=1,
                                relief='solid',
                                highlightthickness=0)
         
         # Create custom scrollbar
         scrollbar = tk.Scrollbar(log_frame,
-                                bg=ModernTheme.CARD_BG,
-                                troughcolor=ModernTheme.DARKER_BG,
-                                activebackground=ModernTheme.ACCENT,
+                                bg=colors['card_bg'],
+                                troughcolor=colors['darker_bg'],
+                                activebackground=colors['accent'],
                                 highlightthickness=0)
         
         self.log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -789,14 +809,15 @@ class ZigbeeProgrammerGUI:
         scrollbar.config(command=self.log_text.yview)
         
         # Configure text tags for colored output
-        self.log_text.tag_configure("success", foreground=ModernTheme.SUCCESS)
-        self.log_text.tag_configure("warning", foreground=ModernTheme.WARNING)
-        self.log_text.tag_configure("error", foreground=ModernTheme.ERROR)
-        self.log_text.tag_configure("info", foreground=ModernTheme.ACCENT)
+        self.log_text.tag_configure("success", foreground=colors['success'])
+        self.log_text.tag_configure("warning", foreground=colors['warning'])
+        self.log_text.tag_configure("error", foreground=colors['error'])
+        self.log_text.tag_configure("info", foreground=colors['accent'])
     
     def create_modern_status_bar(self, parent):
         """Create modern status bar"""
-        status_frame = tk.Frame(parent, bg=ModernTheme.DARKER_BG, height=25)
+        colors = self.get_theme_colors()
+        status_frame = tk.Frame(parent, bg=colors['darker_bg'], height=25)
         status_frame.pack(fill=tk.X, pady=(15, 0))
         status_frame.pack_propagate(False)
         
@@ -804,27 +825,28 @@ class ZigbeeProgrammerGUI:
         self.status_label = tk.Label(status_frame,
                                     textvariable=self.status_var,
                                     font=('Segoe UI', 8),
-                                    fg=ModernTheme.TEXT_SECONDARY,
-                                    bg=ModernTheme.DARKER_BG,
+                                    fg=colors['text_secondary'],
+                                    bg=colors['darker_bg'],
                                     anchor=tk.W)
         self.status_label.pack(fill=tk.X, padx=12, pady=4)
         
     def create_menu(self):
         """Create the application menu with modern styling"""
+        colors = self.get_theme_colors()
         menubar = tk.Menu(self.root,
-                         bg=ModernTheme.CARD_BG,
-                         fg=ModernTheme.TEXT_PRIMARY,
-                         activebackground=ModernTheme.ACCENT,
-                         activeforeground=ModernTheme.TEXT_PRIMARY,
+                         bg=colors['card_bg'],
+                         fg=colors['text_primary'],
+                         activebackground=colors['accent'],
+                         activeforeground=colors['text_primary'],
                          borderwidth=0)
         self.root.config(menu=menubar)
         
         # View menu for theme options
         view_menu = tk.Menu(menubar, tearoff=0,
-                           bg=ModernTheme.CARD_BG,
-                           fg=ModernTheme.TEXT_PRIMARY,
-                           activebackground=ModernTheme.ACCENT,
-                           activeforeground=ModernTheme.TEXT_PRIMARY,
+                           bg=colors['card_bg'],
+                           fg=colors['text_primary'],
+                           activebackground=colors['accent'],
+                           activeforeground=colors['text_primary'],
                            borderwidth=0)
         menubar.add_cascade(label="View", menu=view_menu)
         view_menu.add_command(label="Toggle Dark/Light Theme", command=self.toggle_theme)
@@ -835,10 +857,10 @@ class ZigbeeProgrammerGUI:
         
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0,
-                            bg=ModernTheme.CARD_BG,
-                            fg=ModernTheme.TEXT_PRIMARY,
-                            activebackground=ModernTheme.ACCENT,
-                            activeforeground=ModernTheme.TEXT_PRIMARY,
+                            bg=colors['card_bg'],
+                            fg=colors['text_primary'],
+                            activebackground=colors['accent'],
+                            activeforeground=colors['text_primary'],
                             borderwidth=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
         tools_menu.add_command(label="Check Commander Status", command=self.check_commander_status)
@@ -856,10 +878,10 @@ class ZigbeeProgrammerGUI:
         
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0,
-                           bg=ModernTheme.CARD_BG,
-                           fg=ModernTheme.TEXT_PRIMARY,
-                           activebackground=ModernTheme.ACCENT,
-                           activeforeground=ModernTheme.TEXT_PRIMARY,
+                           bg=colors['card_bg'],
+                           fg=colors['text_primary'],
+                           activebackground=colors['accent'],
+                           activeforeground=colors['text_primary'],
                            borderwidth=0)
         menubar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About Commander", command=self.show_commander_help)
@@ -1172,13 +1194,14 @@ For support, visit: https://community.silabs.com/"""
     
     def on_erase_checkbox_changed(self):
         """Handle the erase before flash checkbox state change"""
+        colors = self.get_theme_colors()
         if self.erase_before_flash.get():
             # When erase is checked, bootloader becomes mandatory
-            self.bootloader_optional_label.config(text="(Required for Erase)", fg=ModernTheme.ERROR)
+            self.bootloader_optional_label.config(text="(Required for Erase)", fg=colors['error'])
             self.debug_log("Erase before flash enabled - bootloader is now required")
         else:
             # When erase is unchecked, bootloader is optional again
-            self.bootloader_optional_label.config(text="(Optional)", fg=ModernTheme.TEXT_SECONDARY)
+            self.bootloader_optional_label.config(text="(Optional)", fg=colors['text_secondary'])
             self.debug_log("Erase before flash disabled - bootloader is now optional")
         
         # Update program button state
