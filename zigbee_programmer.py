@@ -583,17 +583,28 @@ class ZigbeeProgrammerGUI:
         self.update_status()
         self.update_program_button_state()
     
-    def create_card_frame(self, parent, title):
-        """Create a modern card-style frame with title"""
-        # Get current theme colors
-        bg_color = ModernTheme.DARK_BG if self.current_theme == "dark" else ModernTheme.LIGHT_BG
-        card_bg = ModernTheme.CARD_BG if self.current_theme == "dark" else ModernTheme.LIGHT_CARD_BG
-        text_color = ModernTheme.TEXT_PRIMARY if self.current_theme == "dark" else ModernTheme.LIGHT_TEXT_PRIMARY
-        border_color = ModernTheme.BORDER if self.current_theme == "dark" else ModernTheme.LIGHT_BORDER
+    def create_card_frame(self, parent, title, expand_vertical=False):
+        """Create a modern card-style frame with title
         
-        # Card container (reduced spacing)
-        card_container = tk.Frame(parent, bg=bg_color)
-        card_container.pack(fill=tk.X, pady=(0, 10))
+        Args:
+            parent: Parent widget
+            title: Card title
+            expand_vertical: If True, card will expand vertically to fill available space
+        """
+        # Get current theme colors
+        colors = self.get_theme_colors()
+        bg_color = colors['bg']
+        card_bg = colors['card_bg']
+        text_color = colors['text_primary']
+        border_color = colors['border']
+        
+        # Card container (with optional vertical expansion)
+        if expand_vertical:
+            card_container = tk.Frame(parent, bg=bg_color)
+            card_container.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        else:
+            card_container = tk.Frame(parent, bg=bg_color)
+            card_container.pack(fill=tk.X, pady=(0, 10))
         
         # Card header (more compact)
         header_frame = tk.Frame(card_container, bg=card_bg, height=30)
@@ -607,9 +618,13 @@ class ZigbeeProgrammerGUI:
                               bg=card_bg)
         title_label.pack(side=tk.LEFT, padx=15, pady=8)
         
-        # Card content
-        content_frame = tk.Frame(card_container, bg=card_bg, bd=1, relief='solid')
-        content_frame.pack(fill=tk.X)
+        # Card content (with optional vertical expansion)
+        if expand_vertical:
+            content_frame = tk.Frame(card_container, bg=card_bg, bd=1, relief='solid')
+            content_frame.pack(fill=tk.BOTH, expand=True)
+        else:
+            content_frame = tk.Frame(card_container, bg=card_bg, bd=1, relief='solid')
+            content_frame.pack(fill=tk.X)
         content_frame.configure(highlightbackground=border_color, highlightcolor=border_color)
         
         return content_frame
@@ -777,7 +792,7 @@ class ZigbeeProgrammerGUI:
     def create_log_output_card(self, parent):
         """Create log output card"""
         colors = self.get_theme_colors()
-        card_content = self.create_card_frame(parent, "Log Output")
+        card_content = self.create_card_frame(parent, "Log Output", expand_vertical=True)
         
         log_frame = tk.Frame(card_content, bg=colors['card_bg'])
         log_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=12)
