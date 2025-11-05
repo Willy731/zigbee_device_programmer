@@ -145,3 +145,6 @@ screenshot.sh
 # Documentation generated for development
 IMPLEMENTATION_SUMMARY.md
 USAGE_EXAMPLE.md
+
+# Local Device Mapping File
+device_mapping.json
