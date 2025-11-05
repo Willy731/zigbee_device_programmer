@@ -141,3 +141,6 @@ device_dump.bin
 # Screenshot files (generated for documentation)
 screenshot.sh
 *.png
+
+# Documentation generated for development
+IMPLEMENTATION_SUMMARY.md
