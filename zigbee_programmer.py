@@ -615,6 +615,7 @@ For support, visit: https://community.silabs.com/"""
                                 if version_match:
                                     self.log(f">>> ✓ VERSION MATCH: Device version {comparison_version} matches filename version {expected_version} ({match_reason}) <<<")
                                     version_matches = True
+                                    break
                                 else:
                                     self.log(f">>> ✗ VERSION MISMATCH: Expected {expected_version} but device has {comparison_version} ({match_type}) <<<")
                             elif first_version_processed:
