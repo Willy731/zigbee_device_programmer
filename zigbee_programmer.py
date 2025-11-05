@@ -511,16 +511,27 @@ For support, visit: https://community.silabs.com/"""
             self.log(f"ERROR: {str(e)}")
             return False, "", str(e)
     
-    def verify_app_version(self, device):
+    def verify_app_version(self, device, app_file=None):
         """Verify application version using commander readmem and util appinfo
         
         Args:
             device: The device name/model to read from
+            app_file: The application filename to extract expected version from
             
         Returns:
             bool: True if verification succeeded, False otherwise
         """
         self.log("\n=== Verifying Application Version ===")
+        
+        # Extract expected version from filename if provided
+        expected_version = None
+        expected_decimal = None
+        if app_file:
+            expected_version, expected_decimal = self.extract_version_from_filename(app_file)
+            if expected_version:
+                self.log(f"Expected version from filename: {expected_version} (decimal: {expected_decimal})")
+            else:
+                self.log("Could not extract version from filename")
         
         # Create temporary file for device dump
         with tempfile.NamedTemporaryFile(mode='w+b', suffix='.bin', delete=False) as tmp_file:
@@ -546,8 +557,12 @@ For support, visit: https://community.silabs.com/"""
             success, stdout, stderr = self.run_commander_command(appinfo_cmd)
             
             if success:
-                # Parse and highlight app version
+                # Parse and highlight app version - only validate the FIRST app version found
                 version_found = False
+                version_matches = False
+                first_version_processed = False
+                device_versions = []  # Store all versions found on device
+                
                 for line in stdout.split('\n'):
                     if 'App version' in line:
                         version_found = True
@@ -557,8 +572,10 @@ For support, visit: https://community.silabs.com/"""
                         
                         if parsed_version and decimal_value:
                             self.log(f">>> Parsed Version: {parsed_version} (decimal: {decimal_value}) <<<")
+                            device_versions.append((parsed_version, decimal_value))
                             
-                            # Also try integer math method for comparison
+                            # Calculate alternative parse (int math) for comparison
+                            int_version = None
                             if decimal_value >= 1000000:
                                 int_major = decimal_value // 1000000
                                 int_minor = (decimal_value % 1000000) // 1000
@@ -566,11 +583,66 @@ For support, visit: https://community.silabs.com/"""
                                 int_version = f"{int_major}.{int_minor}.{int_patch}"
                                 if int_version != parsed_version:
                                     self.log(f">>> Alternative parse (int math): {int_version} <<<")
+                            
+                            # Only validate the FIRST app version against the filename
+                            if not first_version_processed and expected_version and expected_decimal:
+                                first_version_processed = True
+                                version_match = False
+                                match_reason = ""
+                                comparison_version = None
+                                
+                                # Use int math version for comparison if available and different from byte parsing
+                                if int_version and int_version != parsed_version:
+                                    comparison_version = int_version
+                                    match_type = "int math"
+                                else:
+                                    comparison_version = parsed_version  
+                                    match_type = "byte parsing"
+                                
+                                # Compare using string comparison
+                                if comparison_version == expected_version:
+                                    version_match = True
+                                    match_reason = f"string match ({match_type})"
+                                # Handle case where device has extra .0 (e.g., "10.20.30.0" vs "10.20.30")
+                                elif comparison_version.endswith('.0') and comparison_version[:-2] == expected_version:
+                                    version_match = True
+                                    match_reason = f"string match (ignoring trailing .0, {match_type})"
+                                # Handle case where expected has extra .0
+                                elif expected_version.endswith('.0') and expected_version[:-2] == comparison_version:
+                                    version_match = True
+                                    match_reason = f"string match (ignoring expected trailing .0, {match_type})"
+                                
+                                if version_match:
+                                    self.log(f">>> ✓ VERSION MATCH: Device version {comparison_version} matches filename version {expected_version} ({match_reason}) <<<")
+                                    version_matches = True
+                                else:
+                                    self.log(f">>> ✗ VERSION MISMATCH: Expected {expected_version} but device has {comparison_version} ({match_type}) <<<")
+                            elif first_version_processed:
+                                # Show alternative parsing for secondary versions but don't validate
+                                if decimal_value >= 1000000:
+                                    int_major = decimal_value // 1000000
+                                    int_minor = (decimal_value % 1000000) // 1000
+                                    int_patch = decimal_value % 1000
+                                    int_version_secondary = f"{int_major}.{int_minor}.{int_patch}"
+                                    if int_version_secondary != parsed_version:
+                                        self.log(f">>> Alternative parse (int math): {int_version_secondary} <<<")
+                                self.log(">>> (Secondary app version - not validated) <<<")
                         else:
                             self.log(">>> Could not parse version number <<<")
+                            if not first_version_processed and expected_version:
+                                first_version_processed = True
+                                self.log(f">>> ✗ VERSION MISMATCH: Could not parse device version, expected {expected_version} <<<")
                 
+                # Summary of version verification (only for the first version)
                 if version_found:
-                    self.log("Application version verified successfully!")
+                    if expected_version:
+                        if version_matches:
+                            self.log(">>> ✓ VERSION VERIFICATION PASSED: Device version matches filename! <<<")
+                        else:
+                            self.log(">>> ✗ VERSION VERIFICATION FAILED: Device version does not match filename! <<<")
+                            return False  # Return false on version mismatch
+                    else:
+                        self.log("Application version verified successfully!")
                     return True
                 else:
                     self.log("No application version found in output")
@@ -651,6 +723,51 @@ For support, visit: https://community.silabs.com/"""
         
         return version_line, None, None
     
+    def extract_version_from_filename(self, filename):
+        """Extract version from filename using regex pattern
+        
+        Args:
+            filename: The application filename (e.g., "msensor_2-1-7.ota" or "occupancy_v3_1-1-5.s37")
+            
+        Returns:
+            tuple: (version_string, decimal_value) or (None, None) if not found
+        """
+        import re
+        
+        # Extract just the filename from the full path
+        basename = os.path.basename(filename)
+        
+        # Multiple regex patterns to try in order
+        patterns = [
+            r'(\d{1,3}[-_]\d{1,3}[-_]\d{1,3})(?=[._])',  # Version followed by dot or underscore (e.g., "1-1-5.s37")
+            r'_(\d{1,3}[-_]\d{1,3}[-_]\d{1,3})(?![-_]\d)', # Version after underscore, not followed by more digits
+            r'(\d{1,3}[-_]\d{1,3}[-_]\d{1,3})',          # Any version pattern
+        ]
+        
+        for pattern in patterns:
+            matches = re.findall(pattern, basename)
+            if matches:
+                # Use the last match (most likely to be the actual version)
+                version_string = matches[-1]
+                
+                # Normalize separators to hyphens for consistency
+                normalized = version_string.replace('_', '-')
+                
+                # Split and convert to decimal using the same formula as JavaScript
+                digits = normalized.split('-')
+                decimal_value = (
+                    int(digits[0]) * 1000000 +
+                    int(digits[1]) * 1000 +
+                    int(digits[2])
+                )
+                
+                # Convert to dot notation for display
+                dot_version = f"{digits[0]}.{digits[1]}.{digits[2]}"
+                
+                return dot_version, decimal_value
+        
+        return None, None
+    
     def program_device_thread(self):
         """Thread function to program the device"""
         try:
@@ -712,7 +829,7 @@ For support, visit: https://community.silabs.com/"""
             self.log("Application programmed successfully!")
             
             # Verify application version
-            self.verify_app_version(device)
+            self.verify_app_version(device, app_file)
             
             self.log("\n" + "="*60)
             self.log("Programming completed successfully!")

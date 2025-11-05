@@ -63,6 +63,17 @@ The application automatically converts hex version values to readable format:
 - **Integer math parsing**: Decimal `1001005` → `1.1.5` (calculated as major*1000000 + minor*1000 + patch)
 - **Multiple format support**: Handles various hex formats and decimal values
 
+### Filename Version Comparison
+The application now compares device versions against the expected version from the filename:
+- **Automatic extraction**: Extracts version from filenames like `app_2-1-7.ota` or `occupancy_v3_1-1-5.s37` → `1.1.5`
+- **Smart parsing selection**: Uses integer math parsing when available for more accurate version comparison
+- **First version validation**: Only validates the FIRST app version found on the device
+- **Clear verification**: Displays ✓ VERSION MATCH or ✗ VERSION MISMATCH in the log
+- **Pattern support**: Supports various filename patterns like:
+  - `msensor_2-1-7.ota` → `2.1.7`
+  - `occupancy_v3_1-1-5.s37` → `1.1.5` (underscore format)
+  - `C:/path/application_10-20-30.hex` → `10.20.30`
+
 ### Tools Menu
 - **Check Commander Status**: Verify Simplicity Commander installation and functionality
 - **Set Commander Path**: Manually specify Commander executable location  
@@ -117,10 +128,28 @@ The application uses the following Simplicity Commander commands:
 
 ## Version Parsing Examples
 
-The application converts hex version values as follows:
-- `0x01010005` → `1.1.5` (byte parsing: 01.01.00.05)
-- `0x02000003` → `2.0.3` (byte parsing: 02.00.00.03)  
-- `1001005` (decimal) → `1.1.5` (integer math: 1*1000000 + 1*1000 + 5)
+The application converts hex version values and compares them with filename versions:
+
+### Filename Version Extraction:
+- `msensor_2-1-7.ota` → `2.1.7` (decimal: 2001007)
+- `occupancy_v3_1-1-5.s37` → `1.1.5` (decimal: 1001005) - underscore format
+- `C:/path/app_10-20-30.hex` → `10.20.30` (decimal: 10020030)
+
+### Device Version Parsing:
+- `0x02010007` → `2.1.7` (byte parsing: 02.01.00.07)
+- `0x03010005` → `3.1.5` (byte parsing: 03.01.00.05)
+- `0x0A141E00` → `10.20.30.0` (byte parsing: 0A.14.1E.00)
+
+### Version Comparison Results:
+```
+>>> App version                     : 0x000f462d <<<
+>>> Parsed Version: 0.15.70.45 (decimal: 1001005) <<<
+>>> ✗ VERSION MISMATCH: Expected 1.1.5 but device has 0.15.70.45 <<<
+>>> App version                     : 0x02040002 <<<
+>>> Parsed Version: 2.4.2 (decimal: 33816578) <<<
+>>> (Secondary app version - not validated) <<<
+>>> ✗ VERSION VERIFICATION FAILED: Device version does not match filename! <<<
+```
 
 ## License
 
