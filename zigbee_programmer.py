@@ -31,12 +31,16 @@ class ZigbeeProgrammerGUI:
         self.bootloader_file_var = tk.StringVar()
         self.commander_path = None
         
-        # Common Zigbee device types
-        self.devices = [
-            "MGM220PC22HNA",
-            "MGM210PA22JIA",
-            "MGM13P02F512GA",
-        ]
+        # Device mapping: Display name -> Actual chip name
+        self.device_mapping = {
+            "OSensor V3": "MGM220PC22HNA",
+            "MSensor V2": "MGM220PC22HNA", 
+            "MSensor V1": "MGM210PA22JIA",
+            "ESensor": "MGM13P02F512GA",
+        }
+        
+        # Display names for the dropdown
+        self.device_display_names = list(self.device_mapping.keys())
         
         # Find commander executable on startup
         self.find_commander()
@@ -76,6 +80,17 @@ class ZigbeeProgrammerGUI:
                 return True
         
         return False
+    
+    def get_actual_device_name(self, display_name):
+        """Get the actual chip name from the display name
+        
+        Args:
+            display_name: The display name selected by the user
+            
+        Returns:
+            str: The actual chip name for commander, or the display name if not found in mapping
+        """
+        return self.device_mapping.get(display_name, display_name)
     
     def check_commander_available(self):
         """Check if commander is available and show helpful error if not"""
@@ -141,9 +156,9 @@ class ZigbeeProgrammerGUI:
         row = 0
         ttk.Label(main_frame, text="Device:").grid(row=row, column=0, sticky=tk.W, pady=5)
         device_combo = ttk.Combobox(main_frame, textvariable=self.device_var, 
-                                     values=self.devices, state="readonly", width=40)
+                                     values=self.device_display_names, state="readonly", width=40)
         device_combo.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
-        if self.devices:
+        if self.device_display_names:
             device_combo.current(0)
         
         # Application file selection
@@ -256,13 +271,15 @@ class ZigbeeProgrammerGUI:
         if not self.check_commander_available():
             return
         
-        device = self.device_var.get()
-        if not device:
+        device_display = self.device_var.get()
+        if not device_display:
             messagebox.showwarning("No Device Selected", "Please select a device before testing connection.")
             return
         
+        device = self.get_actual_device_name(device_display)
+        
         self.log("\n=== Testing Device Connection ===")
-        self.log(f"Testing connection to device: {device}")
+        self.log(f"Testing connection to device: {device_display} ({device})")
         
         # Test with device list command
         list_cmd = [self.commander_path, "adapter", "list"]
@@ -278,11 +295,11 @@ class ZigbeeProgrammerGUI:
                 success2, stdout2, stderr2 = self.run_commander_command(probe_cmd)
                 
                 if success2:
-                    self.log(f"✓ Successfully connected to {device}")
-                    messagebox.showinfo("Success", f"Device {device} is connected and accessible!")
+                    self.log(f"✓ Successfully connected to {device_display} ({device})")
+                    messagebox.showinfo("Success", f"Device {device_display} is connected and accessible!")
                 else:
                     error_msg = (
-                        f"Found adapters but failed to connect to {device}.\n\n"
+                        f"Found adapters but failed to connect to {device_display} ({device}).\n\n"
                         "Possible issues:\n"
                         "1. Device not connected or powered\n"
                         "2. Wrong device type selected\n"
@@ -436,7 +453,7 @@ For support, visit: https://community.silabs.com/"""
         filename = filedialog.askopenfilename(
             title="Select Application File",
             filetypes=[
-                ("Binary Files", "*.bin *.hex *.s37"),
+                ("Binary Files", "*.bin *.hex *.s37 *.gbl"),
                 ("All Files", "*.*")
             ]
         )
@@ -511,17 +528,21 @@ For support, visit: https://community.silabs.com/"""
             self.log(f"ERROR: {str(e)}")
             return False, "", str(e)
     
-    def verify_app_version(self, device, app_file=None):
+    def verify_app_version(self, device_display, app_file=None):
         """Verify application version using commander readmem and util appinfo
         
         Args:
-            device: The device name/model to read from
+            device_display: The display device name selected by user
             app_file: The application filename to extract expected version from
             
         Returns:
             bool: True if verification succeeded, False otherwise
         """
         self.log("\n=== Verifying Application Version ===")
+        
+        # Get the actual device name for commander
+        device = self.get_actual_device_name(device_display)
+        self.log(f"Device: {device_display} ({device})")
         
         # Extract expected version from filename if provided
         expected_version = None
@@ -772,12 +793,13 @@ For support, visit: https://community.silabs.com/"""
     def program_device_thread(self):
         """Thread function to program the device"""
         try:
-            device = self.device_var.get()
+            device_display = self.device_var.get()
+            device = self.get_actual_device_name(device_display)
             app_file = self.app_file_var.get()
             bootloader_file = self.bootloader_file_var.get()
             
             # Validate inputs
-            if not device:
+            if not device_display:
                 self.log("ERROR: Please select a device")
                 return
             
@@ -795,6 +817,7 @@ For support, visit: https://community.silabs.com/"""
             
             self.log("\n" + "="*60)
             self.log("Starting device programming...")
+            self.log(f"Device: {device_display} ({device})")
             self.log("="*60)
             
             # Program bootloader if provided
@@ -830,7 +853,7 @@ For support, visit: https://community.silabs.com/"""
             self.log("Application programmed successfully!")
             
             # Verify application version
-            self.verify_app_version(device, app_file)
+            self.verify_app_version(device_display, app_file)
             
             self.log("\n" + "="*60)
             self.log("Programming completed successfully!")

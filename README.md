@@ -2,9 +2,21 @@
 
 A GUI application to program Zigbee devices using Simplicity Commander.
 
+## Device Selection
+
+The application provides a user-friendly device selection system:
+
+### Custom Device Names
+- **OSensor V3** → `MGM220PC22HNA`
+- **MSensor V2** → `MGM220PC22HNA` 
+- **MSensor V1** → `MGM210PA22JIA`
+- **ESensor** → `MGM13P02F512GA`
+
+The dropdown shows friendly names while the actual chip names are used internally for commander calls. This makes device selection more intuitive while maintaining compatibility with the underlying hardware.
+
 ## Features
 
-- **Device Selection**: Choose from a dropdown list of common Zigbee devices
+- **Device Selection**: Choose from a dropdown list of user-friendly device names (OSensor V3, MSensor V2, MSensor V1, ESensor)
 - **Application Programming**: Select and flash application firmware files
 - **Bootloader Programming**: Optionally flash bootloader files
 - **Real-time Logging**: View command output and programming progress
