@@ -718,8 +718,6 @@ For support, visit: https://community.silabs.com/"""
             self.log("Programming completed successfully!")
             self.log("="*60 + "\n")
             
-            messagebox.showinfo("Success", "Device programmed successfully!")
-            
         except Exception as e:
             self.log(f"ERROR: Unexpected error: {str(e)}")
             messagebox.showerror("Error", f"Programming failed: {str(e)}")
