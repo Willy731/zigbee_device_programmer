@@ -14,6 +14,7 @@ import shutil
 import platform
 import sys
 import ctypes
+import json
 
 
 class ZigbeeProgrammerGUI:
@@ -31,20 +32,19 @@ class ZigbeeProgrammerGUI:
         self.bootloader_file_var = tk.StringVar()
         self.erase_before_flash = tk.BooleanVar()
         self.commander_path = None
+        self.custom_mapping_path = None
         
-        # Device mapping: Display name -> Actual chip name
-        self.device_mapping = {
-            "OSensor V3": "MGM220PC22HNA",
-            "MSensor V2": "MGM220PC22HNA", 
-            "MSensor V1": "MGM210PA22JIA",
-            "ESensor": "MGM13P02F512GA",
-        }
+        # Debug mode for verbose logging (must be set before loading device mapping)
+        self.debug_mode = False
+        
+        # Settings file for persistent configuration
+        self.settings_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "zigbee_programmer_settings.json")
+        
+        # Load device mapping from JSON
+        self.load_device_mapping()
         
         # Display names for the dropdown
         self.device_display_names = list(self.device_mapping.keys())
-        
-        # Debug mode for verbose logging
-        self.debug_mode = False
         
         # Find commander executable on startup
         self.find_commander()
@@ -95,6 +95,136 @@ class ZigbeeProgrammerGUI:
             str: The actual chip name for commander, or the display name if not found in mapping
         """
         return self.device_mapping.get(display_name, display_name)
+    
+    def load_settings(self):
+        """Load application settings from JSON file"""
+        try:
+            if os.path.exists(self.settings_file):
+                with open(self.settings_file, 'r') as f:
+                    settings = json.load(f)
+                    self.custom_mapping_path = settings.get('custom_mapping_path', None)
+                    self.debug_log(f"Settings loaded: custom_mapping_path = {self.custom_mapping_path}")
+            else:
+                self.debug_log("No settings file found, using defaults")
+        except Exception as e:
+            self.debug_log(f"Error loading settings: {e}")
+            self.custom_mapping_path = None
+    
+    def save_settings(self):
+        """Save application settings to JSON file"""
+        try:
+            settings = {
+                'custom_mapping_path': self.custom_mapping_path
+            }
+            with open(self.settings_file, 'w') as f:
+                json.dump(settings, f, indent=2)
+            self.debug_log(f"Settings saved: {settings}")
+        except Exception as e:
+            self.debug_log(f"Error saving settings: {e}")
+    
+    def load_device_mapping(self):
+        """Load device mapping from JSON file"""
+        # Load settings first to check for custom mapping path
+        self.load_settings()
+        
+        # Default device mapping as fallback
+        default_mapping = {
+            "OSensor V3": "MGM220PC22HNA",
+            "MSensor V2": "MGM220PC22HNA", 
+            "MSensor V1": "MGM210PA22JIA",
+            "ESensor": "MGM13P02F512GA",
+        }
+        
+        # Try to load from custom mapping file first
+        if self.custom_mapping_path and os.path.exists(self.custom_mapping_path):
+            try:
+                with open(self.custom_mapping_path, 'r') as f:
+                    self.device_mapping = json.load(f)
+                self.debug_log(f"Device mapping loaded from custom file: {self.custom_mapping_path}")
+                self.debug_log(f"Loaded {len(self.device_mapping)} device mappings")
+                return
+            except Exception as e:
+                self.debug_log(f"Error loading custom device mapping from {self.custom_mapping_path}: {e}")
+                messagebox.showerror("Error", f"Failed to load custom device mapping:\n{e}\n\nFalling back to default mapping.")
+        
+        # Try to load from default mapping file
+        default_mapping_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "device_mapping.json")
+        if os.path.exists(default_mapping_file):
+            try:
+                with open(default_mapping_file, 'r') as f:
+                    self.device_mapping = json.load(f)
+                self.debug_log(f"Device mapping loaded from default file: {default_mapping_file}")
+                self.debug_log(f"Loaded {len(self.device_mapping)} device mappings")
+                return
+            except Exception as e:
+                self.debug_log(f"Error loading default device mapping file: {e}")
+        
+        # Fallback to hardcoded mapping
+        self.device_mapping = default_mapping
+        self.debug_log("Using fallback hardcoded device mapping")
+        self.debug_log(f"Loaded {len(self.device_mapping)} device mappings")
+        
+        # Create default mapping file if it doesn't exist
+        if not os.path.exists(default_mapping_file):
+            try:
+                with open(default_mapping_file, 'w') as f:
+                    json.dump(default_mapping, f, indent=2)
+                self.debug_log(f"Created default device mapping file: {default_mapping_file}")
+            except Exception as e:
+                self.debug_log(f"Error creating default device mapping file: {e}")
+    
+    def select_device_mapping_file(self):
+        """Allow user to select a custom device mapping JSON file"""
+        filename = filedialog.askopenfilename(
+            title="Select Device Mapping JSON File",
+            filetypes=[
+                ("JSON Files", "*.json"),
+                ("All Files", "*.*")
+            ],
+            initialdir=os.path.dirname(os.path.abspath(__file__))
+        )
+        
+        if filename and os.path.exists(filename):
+            try:
+                # Test load the file to make sure it's valid
+                with open(filename, 'r') as f:
+                    test_mapping = json.load(f)
+                
+                # Validate that it's a dictionary
+                if not isinstance(test_mapping, dict):
+                    raise ValueError("Device mapping file must contain a JSON object (dictionary)")
+                
+                # Update the mapping
+                self.custom_mapping_path = filename
+                self.device_mapping = test_mapping
+                
+                # Update the UI
+                self.device_display_names = list(self.device_mapping.keys())
+                self.refresh_device_dropdown()
+                
+                # Save settings
+                self.save_settings()
+                
+                self.log(f"Device mapping loaded from: {filename}")
+                self.debug_log(f"Loaded {len(self.device_mapping)} device mappings from custom file")
+                messagebox.showinfo("Success", f"Device mapping loaded successfully!\n\nLoaded {len(self.device_mapping)} devices from:\n{filename}")
+                
+            except Exception as e:
+                self.log(f"ERROR: Failed to load device mapping from {filename}: {e}")
+                messagebox.showerror("Error", f"Failed to load device mapping file:\n\n{e}")
+        else:
+            self.debug_log("Device mapping file selection cancelled by user")
+    
+    def refresh_device_dropdown(self):
+        """Refresh the device dropdown with current mapping"""
+        if hasattr(self, 'device_combo'):
+            # Update the combobox values
+            self.device_combo.config(values=self.device_display_names)
+            # Select first device if available
+            if self.device_display_names:
+                self.device_combo.current(0)
+            else:
+                self.device_var.set("")
     
     def check_commander_available(self):
         """Check if commander is available and show helpful error if not"""
@@ -159,11 +289,11 @@ class ZigbeeProgrammerGUI:
         # Device selection
         row = 0
         ttk.Label(main_frame, text="Device:").grid(row=row, column=0, sticky=tk.W, pady=5)
-        device_combo = ttk.Combobox(main_frame, textvariable=self.device_var, 
+        self.device_combo = ttk.Combobox(main_frame, textvariable=self.device_var, 
                                      values=self.device_display_names, state="readonly", width=40)
-        device_combo.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
+        self.device_combo.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
         if self.device_display_names:
-            device_combo.current(0)
+            self.device_combo.current(0)
         
         # Application file selection
         row += 1
@@ -244,6 +374,8 @@ class ZigbeeProgrammerGUI:
         tools_menu.add_command(label="Check Commander Status", command=self.check_commander_status)
         tools_menu.add_command(label="Set Commander Path...", command=self.set_commander_path)
         tools_menu.add_command(label="Test Device Connection", command=self.test_device_connection)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Select Device Mapping File...", command=self.select_device_mapping_file)
         tools_menu.add_separator()
         tools_menu.add_command(label="Toggle Debug Mode", command=self.toggle_debug_mode)
         tools_menu.add_separator()
@@ -407,6 +539,14 @@ To use this application, you need Simplicity Commander installed:
 
 5. Ensure your J-Link drivers are installed and the device is connected.
 
+DEVICE MAPPING:
+Device names are loaded from JSON files for easy customization:
+• Default mapping is stored in 'device_mapping.json'
+• Use 'Tools > Select Device Mapping File...' to load custom mappings
+• Custom mapping file path is saved and restored on restart
+• JSON format: {"Display Name": "Actual Chip Name"}
+• Status bar shows which mapping file is currently active
+
 DEBUG MODE:
 Use 'Tools > Toggle Debug Mode' to enable verbose logging:
 • Shows detailed command execution information
@@ -494,6 +634,13 @@ For support, visit: https://community.silabs.com/"""
             status_parts.append("Commander available")
         else:
             status_parts.append("Commander NOT FOUND")
+        
+        # Add device mapping info
+        if self.custom_mapping_path:
+            mapping_name = os.path.basename(self.custom_mapping_path)
+            status_parts.append(f"Custom mapping: {mapping_name}")
+        else:
+            status_parts.append("Default mapping")
         
         if platform.system() == "Windows":
             if self.is_admin():
