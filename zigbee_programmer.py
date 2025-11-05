@@ -552,24 +552,15 @@ class ZigbeeProgrammerGUI:
         content_frame = tk.Frame(main_container, bg=colors['bg'])
         content_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Left panel for configuration (fixed width)
-        left_panel = tk.Frame(content_frame, bg=colors['bg'], width=450)
-        left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-        left_panel.pack_propagate(False)
+        # Left panel for configuration (scrollable, fixed width)
+        left_panel_container = tk.Frame(content_frame, bg=colors['bg'], width=450)
+        left_panel_container.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        left_panel_container.pack_propagate(False)
         
-        # Device Configuration Card
-        self.create_device_config_card(left_panel)
+        # Create scrollable left panel
+        self.create_scrollable_left_panel(left_panel_container, colors)
         
-        # File Selection Card
-        self.create_file_selection_card(left_panel)
-        
-        # Programming Options Card
-        self.create_programming_options_card(left_panel)
-        
-        # Action Buttons Card
-        self.create_action_buttons_card(left_panel)
-        
-        # Right panel for log output
+        # Right panel for log output (unchanged)
         right_panel = tk.Frame(content_frame, bg=colors['bg'])
         right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         
@@ -579,9 +570,91 @@ class ZigbeeProgrammerGUI:
         # Status bar at bottom
         self.create_modern_status_bar(main_container)
         
-        # Initialize states
+        # Initialize UI states after all widgets are created
         self.update_status()
         self.update_program_button_state()
+    
+    def create_scrollable_left_panel(self, parent, colors):
+        """Create a scrollable left panel for configuration cards"""
+        
+        # Create canvas for scrollable content
+        self.left_canvas = tk.Canvas(parent, 
+                                    bg=colors['bg'],
+                                    highlightthickness=0,
+                                    bd=0,
+                                    width=450)
+        
+        # Create vertical scrollbar for left panel
+        left_scrollbar = tk.Scrollbar(parent, 
+                                     orient=tk.VERTICAL, 
+                                     command=self.left_canvas.yview,
+                                     bg=colors['card_bg'],
+                                     troughcolor=colors['darker_bg'],
+                                     activebackground=colors['accent'])
+        
+        # Configure canvas scrolling
+        self.left_canvas.configure(yscrollcommand=left_scrollbar.set)
+        
+        # Pack scrollbar and canvas
+        left_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.left_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Create scrollable frame inside canvas
+        self.left_scrollable_frame = tk.Frame(self.left_canvas, bg=colors['bg'])
+        self.left_canvas_window = self.left_canvas.create_window((0, 0), 
+                                                                window=self.left_scrollable_frame, 
+                                                                anchor="nw")
+        
+        # Bind canvas configuration events
+        self.left_scrollable_frame.bind("<Configure>", self.on_left_frame_configure)
+        self.left_canvas.bind("<Configure>", self.on_left_canvas_configure)
+        
+        # Bind mouse wheel events for left panel scrolling
+        self.bind_left_panel_mousewheel()
+        
+        # Create the configuration cards inside the scrollable frame
+        self.create_device_config_card(self.left_scrollable_frame)
+        self.create_file_selection_card(self.left_scrollable_frame)
+        self.create_programming_options_card(self.left_scrollable_frame)
+        self.create_action_buttons_card(self.left_scrollable_frame)
+    
+    def on_left_frame_configure(self, event):
+        """Reset the scroll region for the left panel"""
+        self.left_canvas.configure(scrollregion=self.left_canvas.bbox("all"))
+        
+    def on_left_canvas_configure(self, event):
+        """Configure the left panel canvas window size"""
+        # Update the scrollable frame width to match canvas width
+        canvas_width = event.width
+        self.left_canvas.itemconfig(self.left_canvas_window, width=canvas_width)
+    
+    def bind_left_panel_mousewheel(self):
+        """Bind mouse wheel events for left panel scrolling"""
+        def on_left_mousewheel(event):
+            # Only scroll if mouse is over the left canvas
+            widget = event.widget
+            # Check if the event is within the left canvas area
+            if widget == self.left_canvas or self.is_widget_in_left_panel(widget):
+                self.left_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+                return "break"  # Prevent event from propagating
+            
+        def is_descendant_of_left_canvas(widget):
+            """Check if widget is a descendant of the left canvas"""
+            while widget:
+                if widget == self.left_canvas or widget == self.left_scrollable_frame:
+                    return True
+                widget = widget.master
+            return False
+        
+        # Store the function as a method for later reference
+        self.is_widget_in_left_panel = is_descendant_of_left_canvas
+        
+        # Bind mouse wheel events to left canvas and its children
+        self.left_canvas.bind("<MouseWheel>", on_left_mousewheel)
+        
+        # For Linux (button 4 and 5)
+        self.left_canvas.bind("<Button-4>", lambda e: self.left_canvas.yview_scroll(-1, "units"))
+        self.left_canvas.bind("<Button-5>", lambda e: self.left_canvas.yview_scroll(1, "units"))
     
     def create_card_frame(self, parent, title, expand_vertical=False):
         """Create a modern card-style frame with title
@@ -1142,6 +1215,10 @@ For support, visit: https://community.silabs.com/"""
     
     def update_status(self):
         """Update the status bar"""
+        # Check if status_var exists (status bar has been created)
+        if not hasattr(self, 'status_var'):
+            return
+            
         status_parts = []
         
         if self.commander_path:
@@ -1224,6 +1301,10 @@ For support, visit: https://community.silabs.com/"""
     
     def update_program_button_state(self):
         """Enable/disable the Program Device button based on current selections"""
+        # Check if program_button exists (button has been created)
+        if not hasattr(self, 'program_button'):
+            return
+            
         app_file = self.app_file_var.get().strip()
         bootloader_file = self.bootloader_file_var.get().strip()
         erase_enabled = self.erase_before_flash.get()
