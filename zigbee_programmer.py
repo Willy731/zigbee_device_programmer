@@ -1,0 +1,867 @@
+#!/usr/bin/env python3
+"""
+Zigbee Device Programmer GUI
+A GUI application to program Zigbee devices using Simplicity Commander
+"""
+
+import tkinter as tk
+from tkinter import ttk, filedialog, scrolledtext, messagebox
+import subprocess
+import threading
+import os
+import tempfile
+import shutil
+import platform
+import sys
+import ctypes
+
+
+class ZigbeeProgrammerGUI:
+    # Constants
+    COMMANDER_TIMEOUT = 120  # Timeout for commander commands in seconds
+    
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Zigbee Device Programmer")
+        self.root.geometry("800x600")
+        
+        # Variables
+        self.device_var = tk.StringVar()
+        self.app_file_var = tk.StringVar()
+        self.bootloader_file_var = tk.StringVar()
+        self.commander_path = None
+        
+        # Common Zigbee device types
+        self.devices = [
+            "MGM220PC22HNA",
+            "MGM210PA22JIA",
+            "MGM13P02F512GA",
+        ]
+        
+        # Find commander executable on startup
+        self.find_commander()
+        
+        self.create_widgets()
+        
+    def find_commander(self):
+        """Find the Simplicity Commander executable"""
+        # First check if commander is in PATH
+        commander_exe = "commander.exe" if platform.system() == "Windows" else "commander"
+        
+        if shutil.which(commander_exe):
+            self.commander_path = commander_exe
+            return True
+        
+        # If not in PATH, check common installation locations
+        if platform.system() == "Windows":
+            common_paths = [
+                r"C:\SiliconLabs\SimplicityStudio\v5\developer\adapter_packs\commander\Commander.exe",
+                r"C:\SiliconLabs\SimplicityStudio\v4\developer\adapter_packs\commander\Commander.exe",
+                r"C:\Program Files\Silicon Labs\Simplicity Studio\v5\developer\adapter_packs\commander\Commander.exe",
+                r"C:\Program Files\Silicon Labs\Simplicity Studio\v4\developer\adapter_packs\commander\Commander.exe",
+                r"C:\Program Files (x86)\Silicon Labs\Simplicity Studio\v5\developer\adapter_packs\commander\Commander.exe",
+                r"C:\Program Files (x86)\Silicon Labs\Simplicity Studio\v4\developer\adapter_packs\commander\Commander.exe",
+            ]
+        else:
+            # Linux/macOS paths
+            common_paths = [
+                "/opt/SimplicityStudio_v5/developer/adapter_packs/commander/Commander",
+                "/opt/SimplicityStudio_v4/developer/adapter_packs/commander/Commander",
+                "/Applications/Simplicity Studio.app/Contents/Eclipse/developer/adapter_packs/commander/Commander",
+            ]
+        
+        for path in common_paths:
+            if os.path.exists(path):
+                self.commander_path = path
+                return True
+        
+        return False
+    
+    def check_commander_available(self):
+        """Check if commander is available and show helpful error if not"""
+        if self.commander_path is None:
+            error_msg = (
+                "Simplicity Commander not found!\n\n"
+                "Please ensure Simplicity Commander is installed:\n"
+                "1. Install Simplicity Studio from Silicon Labs\n"
+                "2. Add Commander to your PATH, or\n"
+                "3. Install it in one of these locations:\n"
+                "   - C:\\SiliconLabs\\SimplicityStudio\\v5\\developer\\adapter_packs\\commander\\\n"
+                "   - C:\\Program Files\\Silicon Labs\\Simplicity Studio\\v5\\developer\\adapter_packs\\commander\\\n\n"
+                "You can also download Commander standalone from:\n"
+                "https://community.silabs.com/s/article/simplicity-commander\n\n"
+                "Use 'Tools > Set Commander Path' to manually specify the location."
+            )
+            messagebox.showerror("Commander Not Found", error_msg)
+            self.log("ERROR: Simplicity Commander not found. Please install it and restart the application.")
+            return False
+        
+        # Additional check: verify commander executable can run
+        try:
+            test_cmd = [self.commander_path, "--version"]
+            result = subprocess.run(test_cmd, capture_output=True, text=True, timeout=10)
+            if result.returncode != 0:
+                error_msg = (
+                    f"Commander found at {self.commander_path} but failed to execute.\n\n"
+                    "Possible issues:\n"
+                    "1. Insufficient permissions - try running as administrator\n"
+                    "2. Missing dependencies\n"
+                    "3. Corrupted installation\n\n"
+                    "Please reinstall Simplicity Commander or contact support."
+                )
+                messagebox.showerror("Commander Execution Error", error_msg)
+                self.log(f"ERROR: Commander execution failed: {result.stderr}")
+                return False
+        except Exception as e:
+            error_msg = (
+                f"Commander found at {self.commander_path} but failed to execute.\n\n"
+                f"Error: {str(e)}\n\n"
+                "Try running the application as administrator or reinstall Commander."
+            )
+            messagebox.showerror("Commander Execution Error", error_msg)
+            self.log(f"ERROR: Commander execution failed: {str(e)}")
+            return False
+        
+        return True
+        
+    def create_widgets(self):
+        # Create menu bar
+        self.create_menu()
+        
+        # Main container
+        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Configure grid weights
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
+        main_frame.columnconfigure(1, weight=1)
+        
+        # Device selection
+        row = 0
+        ttk.Label(main_frame, text="Device:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        device_combo = ttk.Combobox(main_frame, textvariable=self.device_var, 
+                                     values=self.devices, state="readonly", width=40)
+        device_combo.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
+        if self.devices:
+            device_combo.current(0)
+        
+        # Application file selection
+        row += 1
+        ttk.Label(main_frame, text="Application File:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        app_frame = ttk.Frame(main_frame)
+        app_frame.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
+        app_frame.columnconfigure(0, weight=1)
+        
+        ttk.Entry(app_frame, textvariable=self.app_file_var).grid(row=0, column=0, sticky=(tk.W, tk.E))
+        ttk.Button(app_frame, text="Browse...", command=self.browse_app_file).grid(row=0, column=1, padx=(5, 0))
+        
+        # Bootloader file selection (optional)
+        row += 1
+        ttk.Label(main_frame, text="Bootloader File:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        boot_frame = ttk.Frame(main_frame)
+        boot_frame.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
+        boot_frame.columnconfigure(0, weight=1)
+        
+        ttk.Entry(boot_frame, textvariable=self.bootloader_file_var).grid(row=0, column=0, sticky=(tk.W, tk.E))
+        ttk.Button(boot_frame, text="Browse...", command=self.browse_bootloader_file).grid(row=0, column=1, padx=(5, 0))
+        ttk.Label(main_frame, text="(Optional)", font=("", 8, "italic")).grid(row=row, column=2, sticky=tk.W, padx=(5, 0))
+        
+        # Program button
+        row += 1
+        self.program_button = ttk.Button(main_frame, text="Program Device", command=self.program_device)
+        self.program_button.grid(row=row, column=0, columnspan=3, pady=20)
+        
+        # Log window
+        row += 1
+        ttk.Label(main_frame, text="Log Output:").grid(row=row, column=0, sticky=tk.W, pady=(10, 5))
+        
+        row += 1
+        log_frame = ttk.Frame(main_frame)
+        log_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
+        log_frame.columnconfigure(0, weight=1)
+        log_frame.rowconfigure(0, weight=1)
+        main_frame.rowconfigure(row, weight=1)
+        
+        self.log_text = scrolledtext.ScrolledText(log_frame, wrap=tk.WORD, height=15)
+        self.log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Clear log button
+        row += 1
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=row, column=0, columnspan=3, pady=5)
+        
+        ttk.Button(button_frame, text="Clear Log", command=self.clear_log).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Check Commander", command=self.check_commander_status).pack(side=tk.LEFT)
+        
+        # Status bar
+        row += 1
+        self.status_var = tk.StringVar()
+        self.status_label = ttk.Label(main_frame, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
+        self.status_label.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(10, 0))
+        
+        # Update status
+        self.update_status()
+        
+    def create_menu(self):
+        """Create the application menu"""
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+        
+        # Tools menu
+        tools_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label="Check Commander Status", command=self.check_commander_status)
+        tools_menu.add_command(label="Set Commander Path...", command=self.set_commander_path)
+        tools_menu.add_command(label="Test Device Connection", command=self.test_device_connection)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Refresh Commander", command=self.refresh_commander)
+        if platform.system() == "Windows":
+            tools_menu.add_separator()
+            tools_menu.add_command(label="Restart as Administrator", command=self.restart_as_admin)
+        
+        # Help menu
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="About Commander", command=self.show_commander_help)
+    
+    def set_commander_path(self):
+        """Allow user to manually set the commander path"""
+        filename = filedialog.askopenfilename(
+            title="Select Simplicity Commander Executable",
+            filetypes=[
+                ("Executable Files", "*.exe" if platform.system() == "Windows" else "*"),
+                ("All Files", "*.*")
+            ]
+        )
+        if filename and os.path.exists(filename):
+            self.commander_path = filename
+            self.log(f"Commander path set to: {filename}")
+            self.update_status()
+            messagebox.showinfo("Success", f"Commander path updated to:\n{filename}")
+    
+    def refresh_commander(self):
+        """Re-search for commander"""
+        self.log("\n=== Searching for Simplicity Commander ===")
+        if self.find_commander():
+            self.log(f"Commander found at: {self.commander_path}")
+            messagebox.showinfo("Success", f"Commander found at:\n{self.commander_path}")
+        else:
+            self.log("Commander not found in standard locations")
+            messagebox.showwarning("Not Found", "Commander not found in standard locations.\nPlease use 'Tools > Set Commander Path' to set it manually.")
+        self.update_status()
+    
+    def test_device_connection(self):
+        """Test device connection and permissions"""
+        if not self.check_commander_available():
+            return
+        
+        device = self.device_var.get()
+        if not device:
+            messagebox.showwarning("No Device Selected", "Please select a device before testing connection.")
+            return
+        
+        self.log("\n=== Testing Device Connection ===")
+        self.log(f"Testing connection to device: {device}")
+        
+        # Test with device list command
+        list_cmd = [self.commander_path, "adapter", "list"]
+        success, stdout, stderr = self.run_commander_command(list_cmd)
+        
+        if success:
+            self.log("Device adapters found:")
+            if "J-Link" in stdout or "adapter" in stdout.lower():
+                self.log("✓ J-Link adapter detected")
+                
+                # Test device-specific connection
+                probe_cmd = [self.commander_path, "adapter", "probe", "--device", device]
+                success2, stdout2, stderr2 = self.run_commander_command(probe_cmd)
+                
+                if success2:
+                    self.log(f"✓ Successfully connected to {device}")
+                    messagebox.showinfo("Success", f"Device {device} is connected and accessible!")
+                else:
+                    error_msg = (
+                        f"Found adapters but failed to connect to {device}.\n\n"
+                        "Possible issues:\n"
+                        "1. Device not connected or powered\n"
+                        "2. Wrong device type selected\n"
+                        "3. Device in use by another application\n"
+                        "4. USB driver issues\n\n"
+                        "Try:\n"
+                        "- Disconnect and reconnect the device\n"
+                        "- Close other applications using the device\n"
+                        "- Run as administrator\n"
+                        "- Check device drivers"
+                    )
+                    messagebox.showerror("Connection Failed", error_msg)
+            else:
+                error_msg = (
+                    "No compatible adapters found.\n\n"
+                    "Please ensure:\n"
+                    "1. J-Link device is connected\n"
+                    "2. USB drivers are installed\n"
+                    "3. Device is powered on\n"
+                    "4. Run as administrator if needed"
+                )
+                messagebox.showerror("No Adapters", error_msg)
+        else:
+            error_msg = (
+                "Failed to list adapters.\n\n"
+                "This usually indicates:\n"
+                "1. Permission issues - try running as administrator\n"
+                "2. Driver problems\n"
+                "3. Commander installation issues\n\n"
+                f"Error details:\n{stderr}"
+            )
+            messagebox.showerror("Adapter List Failed", error_msg)
+    
+    def restart_as_admin(self):
+        """Restart the application as administrator (Windows only)"""
+        if platform.system() != "Windows":
+            messagebox.showinfo("Not Available", "This feature is only available on Windows.")
+            return
+        
+        try:
+            # Check if already running as admin
+            if ctypes.windll.shell32.IsUserAnAdmin():
+                messagebox.showinfo("Already Administrator", "Application is already running as administrator.")
+                return
+            
+            if messagebox.askyesno("Restart as Administrator", 
+                                 "This will restart the application with administrator privileges.\n\nContinue?"):
+                # Get the current script path
+                script_path = os.path.abspath(sys.argv[0])
+                
+                # Restart with admin privileges
+                ctypes.windll.shell32.ShellExecuteW(
+                    None, "runas", sys.executable, f'"{script_path}"', None, 1
+                )
+                
+                # Close current instance
+                self.root.quit()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to restart as administrator: {str(e)}")
+    
+    def is_admin(self):
+        """Check if running as administrator (Windows only)"""
+        if platform.system() == "Windows":
+            try:
+                return ctypes.windll.shell32.IsUserAnAdmin()
+            except:
+                return False
+        return True  # Assume admin on non-Windows
+    
+    def show_commander_help(self):
+        """Show help information about commander setup"""
+        help_text = """Simplicity Commander Setup Help
+
+To use this application, you need Simplicity Commander installed:
+
+1. Download and install Simplicity Studio from Silicon Labs:
+   https://www.silabs.com/developers/simplicity-studio
+
+2. Alternatively, download Commander standalone:
+   https://community.silabs.com/s/article/simplicity-commander
+
+3. Common installation paths:
+   • C:\\SiliconLabs\\SimplicityStudio\\v5\\developer\\adapter_packs\\commander\\
+   • C:\\Program Files\\Silicon Labs\\Simplicity Studio\\v5\\developer\\adapter_packs\\commander\\
+
+4. Add Commander to your system PATH, or use 'Tools > Set Commander Path' 
+   to manually specify the location.
+
+5. Ensure your J-Link drivers are installed and the device is connected.
+
+PERMISSION ISSUES:
+If you get "access denied" or "permission" errors:
+• Run this application as Administrator
+• Ensure no other applications are using the device
+• Check that J-Link drivers are properly installed
+• Try disconnecting and reconnecting the device
+
+TROUBLESHOOTING:
+• Use 'Tools > Check Commander Status' to verify installation
+• Use 'Tools > Test Device Connection' to check device connectivity
+• Check the log output for detailed error messages
+
+For support, visit: https://community.silabs.com/"""
+        
+        messagebox.showinfo("Commander Setup Help", help_text)
+        
+    def check_commander_status(self):
+        """Check and display commander status"""
+        self.log("\n=== Checking Simplicity Commander Status ===")
+        if self.commander_path:
+            self.log(f"Commander found at: {self.commander_path}")
+            
+            # Test commander by running version command
+            try:
+                version_cmd = [self.commander_path, "--version"]
+                result = subprocess.run(version_cmd, capture_output=True, text=True, timeout=10)
+                if result.returncode == 0:
+                    self.log("Commander is working correctly!")
+                    if result.stdout:
+                        self.log(f"Version info: {result.stdout.strip()}")
+                else:
+                    self.log("Commander found but may not be working correctly")
+                    if result.stderr:
+                        self.log(f"Error: {result.stderr}")
+            except Exception as e:
+                self.log(f"Error testing commander: {e}")
+        else:
+            self.log("Commander not found!")
+            self.check_commander_available()
+        
+        self.update_status()
+    
+    def update_status(self):
+        """Update the status bar"""
+        status_parts = []
+        
+        if self.commander_path:
+            status_parts.append("Commander available")
+        else:
+            status_parts.append("Commander NOT FOUND")
+        
+        if platform.system() == "Windows":
+            if self.is_admin():
+                status_parts.append("Running as Administrator")
+            else:
+                status_parts.append("Running as User")
+        
+        self.status_var.set(" | ".join(status_parts))
+        
+    def browse_app_file(self):
+        filename = filedialog.askopenfilename(
+            title="Select Application File",
+            filetypes=[
+                ("Binary Files", "*.bin *.hex *.s37"),
+                ("All Files", "*.*")
+            ]
+        )
+        if filename:
+            self.app_file_var.set(filename)
+            self.log(f"Selected application file: {filename}")
+    
+    def browse_bootloader_file(self):
+        filename = filedialog.askopenfilename(
+            title="Select Bootloader File",
+            filetypes=[
+                ("Binary Files", "*.bin *.hex *.s37"),
+                ("All Files", "*.*")
+            ]
+        )
+        if filename:
+            self.bootloader_file_var.set(filename)
+            self.log(f"Selected bootloader file: {filename}")
+    
+    def log(self, message):
+        """Add message to log window"""
+        self.log_text.insert(tk.END, message + "\n")
+        self.log_text.see(tk.END)
+        self.root.update_idletasks()
+    
+    def clear_log(self):
+        """Clear the log window"""
+        self.log_text.delete(1.0, tk.END)
+    
+    def run_commander_command(self, command):
+        """Run a commander command and return output
+        
+        Args:
+            command: List of command arguments to pass to subprocess
+            
+        Returns:
+            tuple: (success: bool, stdout: str, stderr: str)
+        """
+        # Check if commander is available
+        if not self.check_commander_available():
+            return False, "", "Commander not available"
+        
+        # Replace 'commander' with actual path
+        if command[0] == "commander":
+            command[0] = self.commander_path
+        
+        try:
+            self.log(f"Running command: {' '.join(command)}")
+            result = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                timeout=self.COMMANDER_TIMEOUT
+            )
+            
+            # Log stdout
+            if result.stdout:
+                self.log(result.stdout)
+            
+            # Log stderr
+            if result.stderr:
+                self.log(result.stderr)
+            
+            return result.returncode == 0, result.stdout, result.stderr
+        except subprocess.TimeoutExpired:
+            self.log(f"ERROR: Command timed out after {self.COMMANDER_TIMEOUT} seconds")
+            return False, "", "Timeout"
+        except FileNotFoundError:
+            self.log("ERROR: 'commander' not found. Please ensure Simplicity Commander is installed and in PATH")
+            return False, "", "Commander not found"
+        except Exception as e:
+            self.log(f"ERROR: {str(e)}")
+            return False, "", str(e)
+    
+    def verify_app_version(self, device, app_file=None):
+        """Verify application version using commander readmem and util appinfo
+        
+        Args:
+            device: The device name/model to read from
+            app_file: The application filename to extract expected version from
+            
+        Returns:
+            bool: True if verification succeeded, False otherwise
+        """
+        self.log("\n=== Verifying Application Version ===")
+        
+        # Extract expected version from filename if provided
+        expected_version = None
+        expected_decimal = None
+        if app_file:
+            expected_version, expected_decimal = self.extract_version_from_filename(app_file)
+            if expected_version:
+                self.log(f"Expected version from filename: {expected_version} (decimal: {expected_decimal})")
+            else:
+                self.log("Could not extract version from filename")
+        
+        # Create temporary file for device dump
+        with tempfile.NamedTemporaryFile(mode='w+b', suffix='.bin', delete=False) as tmp_file:
+            dump_file = tmp_file.name
+        
+        try:
+            # Read device memory
+            readmem_cmd = [
+                "commander", "readmem",
+                "--region", "@mainflash",
+                "--outfile", dump_file,
+                "--device", device
+            ]
+            
+            success, stdout, stderr = self.run_commander_command(readmem_cmd)
+            
+            if not success:
+                self.log("ERROR: Failed to read device memory")
+                return False
+            
+            # Get application info
+            appinfo_cmd = ["commander", "util", "appinfo", dump_file]
+            success, stdout, stderr = self.run_commander_command(appinfo_cmd)
+            
+            if success:
+                # Parse and highlight app version - only validate the FIRST app version found
+                version_found = False
+                version_matches = False
+                first_version_processed = False
+                device_versions = []  # Store all versions found on device
+                
+                for line in stdout.split('\n'):
+                    if 'App version' in line:
+                        version_found = True
+                        original_line, parsed_version, decimal_value = self.parse_app_version(line)
+                        
+                        self.log(f">>> {original_line.strip()} <<<")
+                        
+                        if parsed_version and decimal_value:
+                            self.log(f">>> Parsed Version: {parsed_version} (decimal: {decimal_value}) <<<")
+                            device_versions.append((parsed_version, decimal_value))
+                            
+                            # Calculate alternative parse (int math) for comparison
+                            int_version = None
+                            if decimal_value >= 1000000:
+                                int_major = decimal_value // 1000000
+                                int_minor = (decimal_value % 1000000) // 1000
+                                int_patch = decimal_value % 1000
+                                int_version = f"{int_major}.{int_minor}.{int_patch}"
+                                if int_version != parsed_version:
+                                    self.log(f">>> Alternative parse (int math): {int_version} <<<")
+                            
+                            # Only validate the FIRST app version against the filename
+                            if not first_version_processed and expected_version and expected_decimal:
+                                first_version_processed = True
+                                version_match = False
+                                match_reason = ""
+                                comparison_version = None
+                                
+                                # Use int math version for comparison if available and different from byte parsing
+                                if int_version and int_version != parsed_version:
+                                    comparison_version = int_version
+                                    match_type = "int math"
+                                else:
+                                    comparison_version = parsed_version  
+                                    match_type = "byte parsing"
+                                
+                                # Compare using string comparison
+                                if comparison_version == expected_version:
+                                    version_match = True
+                                    match_reason = f"string match ({match_type})"
+                                # Handle case where device has extra .0 (e.g., "10.20.30.0" vs "10.20.30")
+                                elif comparison_version.endswith('.0') and comparison_version[:-2] == expected_version:
+                                    version_match = True
+                                    match_reason = f"string match (ignoring trailing .0, {match_type})"
+                                # Handle case where expected has extra .0
+                                elif expected_version.endswith('.0') and expected_version[:-2] == comparison_version:
+                                    version_match = True
+                                    match_reason = f"string match (ignoring expected trailing .0, {match_type})"
+                                
+                                if version_match:
+                                    self.log(f">>> ✓ VERSION MATCH: Device version {comparison_version} matches filename version {expected_version} ({match_reason}) <<<")
+                                    version_matches = True
+                                    break
+                                else:
+                                    self.log(f">>> ✗ VERSION MISMATCH: Expected {expected_version} but device has {comparison_version} ({match_type}) <<<")
+                            elif first_version_processed:
+                                # Show alternative parsing for secondary versions but don't validate
+                                if decimal_value >= 1000000:
+                                    int_major = decimal_value // 1000000
+                                    int_minor = (decimal_value % 1000000) // 1000
+                                    int_patch = decimal_value % 1000
+                                    int_version_secondary = f"{int_major}.{int_minor}.{int_patch}"
+                                    if int_version_secondary != parsed_version:
+                                        self.log(f">>> Alternative parse (int math): {int_version_secondary} <<<")
+                                self.log(">>> (Secondary app version - not validated) <<<")
+                        else:
+                            self.log(">>> Could not parse version number <<<")
+                            if not first_version_processed and expected_version:
+                                first_version_processed = True
+                                self.log(f">>> ✗ VERSION MISMATCH: Could not parse device version, expected {expected_version} <<<")
+                
+                # Summary of version verification (only for the first version)
+                if version_found:
+                    if expected_version:
+                        if version_matches:
+                            self.log(">>> ✓ VERSION VERIFICATION PASSED: Device version matches filename! <<<")
+                        else:
+                            self.log(">>> ✗ VERSION VERIFICATION FAILED: Device version does not match filename! <<<")
+                            return False  # Return false on version mismatch
+                    else:
+                        self.log("Application version verified successfully!")
+                    return True
+                else:
+                    self.log("No application version found in output")
+                    return False
+            else:
+                self.log("ERROR: Failed to get application info")
+                return False
+        finally:
+            # Clean up temporary file
+            try:
+                if os.path.exists(dump_file):
+                    os.remove(dump_file)
+            except (OSError, PermissionError) as e:
+                self.log(f"Warning: Could not remove temporary file {dump_file}: {e}")
+    
+    def parse_app_version(self, version_line):
+        """Parse application version from hex to decimal and format as version string
+        
+        Args:
+            version_line: String containing the app version line from commander output
+            
+        Returns:
+            tuple: (original_line, parsed_version, decimal_value) or (original_line, None, None) if parsing fails
+        """
+        import re
+        
+        # Look for hex values in the line (e.g., 0x01010005, 0x1010005, etc.)
+        hex_pattern = r'0x([0-9a-fA-F]+)'
+        hex_matches = re.findall(hex_pattern, version_line)
+        
+        if not hex_matches:
+            # Try to find just hex digits after common prefixes
+            hex_pattern = r'(?:version[:\s]+|v[:\s]*)?([0-9a-fA-F]{6,8})'
+            hex_matches = re.findall(hex_pattern, version_line, re.IGNORECASE)
+        
+        if hex_matches:
+            # Use the first hex value found
+            hex_value = hex_matches[0]
+            try:
+                # Convert hex to decimal
+                decimal_value = int(hex_value, 16)
+                
+                # Try to parse as byte-structured version first (e.g., 0x01010005 = v1.1.5)
+                if len(hex_value) >= 6:  # At least 6 hex digits
+                    # Pad to 8 digits if needed
+                    padded_hex = hex_value.zfill(8)
+                    
+                    # Extract bytes: 0x01010005 -> 01, 01, 00, 05
+                    byte3 = int(padded_hex[0:2], 16)  # Major version
+                    byte2 = int(padded_hex[2:4], 16)  # Minor version  
+                    byte1 = int(padded_hex[4:6], 16)  # Usually 0
+                    byte0 = int(padded_hex[6:8], 16)  # Patch version
+                    
+                    # Format as version string
+                    if byte1 == 0:  # Standard case: major.minor.patch
+                        parsed_version = f"{byte3}.{byte2}.{byte0}"
+                    else:  # Include all components
+                        parsed_version = f"{byte3}.{byte2}.{byte1}.{byte0}"
+                else:
+                    # Fallback: Parse decimal as version (assuming format: major*1000000 + minor*1000 + patch)
+                    if decimal_value >= 1000000:
+                        major = decimal_value // 1000000
+                        minor = (decimal_value % 1000000) // 1000
+                        patch = decimal_value % 1000
+                        parsed_version = f"{major}.{minor}.{patch}"
+                    else:
+                        # Handle smaller values
+                        if decimal_value >= 1000:
+                            major = decimal_value // 1000
+                            minor = decimal_value % 1000
+                            parsed_version = f"{major}.{minor}"
+                        else:
+                            parsed_version = str(decimal_value)
+                
+                return version_line, parsed_version, decimal_value
+            except ValueError:
+                pass
+        
+        return version_line, None, None
+    
+    def extract_version_from_filename(self, filename):
+        """Extract version from filename using regex pattern
+        
+        Args:
+            filename: The application filename (e.g., "msensor_2-1-7.ota" or "occupancy_v3_1-1-5.s37")
+            
+        Returns:
+            tuple: (version_string, decimal_value) or (None, None) if not found
+        """
+        import re
+        
+        # Extract just the filename from the full path
+        basename = os.path.basename(filename)
+        
+        # Multiple regex patterns to try in order
+        patterns = [
+            r'(\d{1,3}[-_]\d{1,3}[-_]\d{1,3})(?=[._])',  # Version followed by dot or underscore (e.g., "1-1-5.s37")
+            r'_(\d{1,3}[-_]\d{1,3}[-_]\d{1,3})(?![-_]\d)', # Version after underscore, not followed by more digits
+            r'(\d{1,3}[-_]\d{1,3}[-_]\d{1,3})',          # Any version pattern
+        ]
+        
+        for pattern in patterns:
+            matches = re.findall(pattern, basename)
+            if matches:
+                # Use the last match (most likely to be the actual version)
+                version_string = matches[-1]
+                
+                # Normalize separators to hyphens for consistency
+                normalized = version_string.replace('_', '-')
+                
+                # Split and convert to decimal using the same formula as JavaScript
+                digits = normalized.split('-')
+                decimal_value = (
+                    int(digits[0]) * 1000000 +
+                    int(digits[1]) * 1000 +
+                    int(digits[2])
+                )
+                
+                # Convert to dot notation for display
+                dot_version = f"{digits[0]}.{digits[1]}.{digits[2]}"
+                
+                return dot_version, decimal_value
+        
+        return None, None
+    
+    def program_device_thread(self):
+        """Thread function to program the device"""
+        try:
+            device = self.device_var.get()
+            app_file = self.app_file_var.get()
+            bootloader_file = self.bootloader_file_var.get()
+            
+            # Validate inputs
+            if not device:
+                self.log("ERROR: Please select a device")
+                return
+            
+            if not app_file:
+                self.log("ERROR: Please select an application file")
+                return
+            
+            if not os.path.exists(app_file):
+                self.log(f"ERROR: Application file not found: {app_file}")
+                return
+            
+            if bootloader_file and not os.path.exists(bootloader_file):
+                self.log(f"ERROR: Bootloader file not found: {bootloader_file}")
+                return
+            
+            self.log("\n" + "="*60)
+            self.log("Starting device programming...")
+            self.log("="*60)
+            
+            # Program bootloader if provided
+            if bootloader_file:
+                self.log("\n=== Programming Bootloader ===")
+                boot_cmd = [
+                    "commander", "flash",
+                    bootloader_file,
+                    "--device", device
+                ]
+                success, stdout, stderr = self.run_commander_command(boot_cmd)
+                
+                if not success:
+                    self.log("ERROR: Failed to program bootloader")
+                    self.log("Aborting programming sequence")
+                    return
+                
+                self.log("Bootloader programmed successfully!")
+            
+            # Program application
+            self.log("\n=== Programming Application ===")
+            app_cmd = [
+                "commander", "flash",
+                app_file,
+                "--device", device
+            ]
+            success, stdout, stderr = self.run_commander_command(app_cmd)
+            
+            if not success:
+                self.log("ERROR: Failed to program application")
+                return
+            
+            self.log("Application programmed successfully!")
+            
+            # Verify application version
+            self.verify_app_version(device, app_file)
+            
+            self.log("\n" + "="*60)
+            self.log("Programming completed successfully!")
+            self.log("="*60 + "\n")
+            
+        except Exception as e:
+            self.log(f"ERROR: Unexpected error: {str(e)}")
+            messagebox.showerror("Error", f"Programming failed: {str(e)}")
+        finally:
+            # Re-enable the program button
+            self.program_button.config(state="normal")
+    
+    def program_device(self):
+        """Start programming the device in a separate thread"""
+        # Check if commander is available before starting
+        if not self.check_commander_available():
+            return
+        
+        # Disable the program button to prevent multiple clicks
+        self.program_button.config(state="disabled")
+        
+        # Run programming in a separate thread to keep UI responsive
+        thread = threading.Thread(target=self.program_device_thread, daemon=True)
+        thread.start()
+
+
+def main():
+    root = tk.Tk()
+    app = ZigbeeProgrammerGUI(root)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
