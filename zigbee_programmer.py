@@ -17,6 +17,208 @@ import ctypes
 import json
 
 
+class ModernTheme:
+    """Modern theme configuration for the application"""
+    
+    # Color palette - Modern dark theme
+    DARK_BG = "#2b2b2b"
+    DARKER_BG = "#1e1e1e"
+    CARD_BG = "#3c3c3c"
+    ACCENT = "#007acc"
+    ACCENT_HOVER = "#005a9e"
+    SUCCESS = "#4caf50"
+    WARNING = "#ff9800"
+    ERROR = "#f44336"
+    TEXT_PRIMARY = "#ffffff"
+    TEXT_SECONDARY = "#b0b0b0"
+    BORDER = "#555555"
+    
+    # Light theme alternative
+    LIGHT_BG = "#ffffff"
+    LIGHT_CARD_BG = "#f8f9fa"
+    LIGHT_TEXT_PRIMARY = "#212529"
+    LIGHT_TEXT_SECONDARY = "#6c757d"
+    LIGHT_BORDER = "#dee2e6"
+    
+    @classmethod
+    def configure_modern_style(cls, root, theme="dark"):
+        """Configure modern ttk styles"""
+        style = ttk.Style(root)
+        
+        if theme == "dark":
+            # Configure dark theme
+            style.theme_use('clam')
+            
+            # Configure colors
+            style.configure(".", 
+                          background=cls.DARK_BG,
+                          foreground=cls.TEXT_PRIMARY,
+                          bordercolor=cls.BORDER,
+                          fieldbackground=cls.CARD_BG,
+                          selectbackground=cls.ACCENT,
+                          selectforeground=cls.TEXT_PRIMARY,
+                          insertcolor=cls.TEXT_PRIMARY)
+            
+            # Modern button style
+            style.configure("Modern.TButton",
+                          background=cls.ACCENT,
+                          foreground=cls.TEXT_PRIMARY,
+                          borderwidth=0,
+                          focuscolor="none",
+                          relief="flat",
+                          padding=(20, 10))
+            
+            style.map("Modern.TButton",
+                     background=[('active', cls.ACCENT_HOVER),
+                               ('pressed', cls.ACCENT_HOVER)])
+            
+            # Primary action button (larger, more prominent)
+            style.configure("Primary.TButton",
+                          background=cls.ACCENT,
+                          foreground=cls.TEXT_PRIMARY,
+                          borderwidth=0,
+                          focuscolor="none",
+                          relief="flat",
+                          padding=(30, 15),
+                          font=('Segoe UI', 10, 'bold'))
+            
+            style.map("Primary.TButton",
+                     background=[('active', cls.ACCENT_HOVER),
+                               ('pressed', cls.ACCENT_HOVER)])
+            
+            # Card frame style
+            style.configure("Card.TFrame",
+                          background=cls.CARD_BG,
+                          borderwidth=1,
+                          relief="solid",
+                          bordercolor=cls.BORDER)
+            
+            # Modern entry style
+            style.configure("Modern.TEntry",
+                          fieldbackground=cls.CARD_BG,
+                          borderwidth=1,
+                          relief="solid",
+                          bordercolor=cls.BORDER,
+                          insertcolor=cls.TEXT_PRIMARY,
+                          padding=(10, 8))
+            
+            style.map("Modern.TEntry",
+                     bordercolor=[('focus', cls.ACCENT)])
+            
+            # Modern combobox style
+            style.configure("Modern.TCombobox",
+                          fieldbackground=cls.CARD_BG,
+                          borderwidth=1,
+                          relief="solid",
+                          bordercolor=cls.BORDER,
+                          arrowcolor=cls.TEXT_SECONDARY,
+                          padding=(10, 8))
+            
+            style.map("Modern.TCombobox",
+                     bordercolor=[('focus', cls.ACCENT)])
+            
+            # Modern label styles
+            style.configure("Heading.TLabel",
+                          background=cls.DARK_BG,
+                          foreground=cls.TEXT_PRIMARY,
+                          font=('Segoe UI', 12, 'bold'))
+            
+            style.configure("Subheading.TLabel",
+                          background=cls.DARK_BG,
+                          foreground=cls.TEXT_SECONDARY,
+                          font=('Segoe UI', 9))
+            
+            # Modern checkbutton style
+            style.configure("Modern.TCheckbutton",
+                          background=cls.DARK_BG,
+                          foreground=cls.TEXT_PRIMARY,
+                          focuscolor="none",
+                          font=('Segoe UI', 9))
+            
+            # Status styles
+            style.configure("Success.TLabel",
+                          background=cls.DARK_BG,
+                          foreground=cls.SUCCESS,
+                          font=('Segoe UI', 9))
+            
+            style.configure("Warning.TLabel",
+                          background=cls.DARK_BG,
+                          foreground=cls.WARNING,
+                          font=('Segoe UI', 9))
+            
+            style.configure("Error.TLabel",
+                          background=cls.DARK_BG,
+                          foreground=cls.ERROR,
+                          font=('Segoe UI', 9))
+            
+            # Configure root window
+            root.configure(bg=cls.DARK_BG)
+            
+        else:  # light theme
+            style.theme_use('clam')
+            
+            # Configure light theme colors
+            style.configure(".", 
+                          background=cls.LIGHT_BG,
+                          foreground=cls.LIGHT_TEXT_PRIMARY,
+                          bordercolor=cls.LIGHT_BORDER,
+                          fieldbackground=cls.LIGHT_CARD_BG,
+                          selectbackground=cls.ACCENT,
+                          selectforeground=cls.TEXT_PRIMARY,
+                          insertcolor=cls.LIGHT_TEXT_PRIMARY)
+            
+            # Modern button style (light)
+            style.configure("Modern.TButton",
+                          background=cls.ACCENT,
+                          foreground=cls.TEXT_PRIMARY,
+                          borderwidth=0,
+                          focuscolor="none",
+                          relief="flat",
+                          padding=(20, 10))
+            
+            style.map("Modern.TButton",
+                     background=[('active', cls.ACCENT_HOVER),
+                               ('pressed', cls.ACCENT_HOVER)])
+            
+            # Primary action button (light)
+            style.configure("Primary.TButton",
+                          background=cls.ACCENT,
+                          foreground=cls.TEXT_PRIMARY,
+                          borderwidth=0,
+                          focuscolor="none",
+                          relief="flat",
+                          padding=(30, 15),
+                          font=('Segoe UI', 10, 'bold'))
+            
+            style.map("Primary.TButton",
+                     background=[('active', cls.ACCENT_HOVER),
+                               ('pressed', cls.ACCENT_HOVER)])
+            
+            # Modern combobox style (light)
+            style.configure("Modern.TCombobox",
+                          fieldbackground=cls.LIGHT_CARD_BG,
+                          borderwidth=1,
+                          relief="solid",
+                          bordercolor=cls.LIGHT_BORDER,
+                          arrowcolor=cls.LIGHT_TEXT_SECONDARY,
+                          padding=(10, 8))
+            
+            style.map("Modern.TCombobox",
+                     bordercolor=[('focus', cls.ACCENT)])
+            
+            # Modern checkbutton style (light)
+            style.configure("Modern.TCheckbutton",
+                          background=cls.LIGHT_BG,
+                          foreground=cls.LIGHT_TEXT_PRIMARY,
+                          focuscolor="none",
+                          font=('Segoe UI', 9))
+            
+            # Configure root window
+            root.configure(bg=cls.LIGHT_BG)
+        
+        return style
+
+
 class ZigbeeProgrammerGUI:
     # Constants
     COMMANDER_TIMEOUT = 120  # Timeout for commander commands in seconds
@@ -24,7 +226,23 @@ class ZigbeeProgrammerGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Zigbee Device Programmer")
-        self.root.geometry("800x600")
+        self.root.geometry("1200x800")
+        self.root.minsize(1000, 700)
+        
+        # Apply modern theme
+        self.style = ModernTheme.configure_modern_style(root, theme="dark")
+        self.current_theme = "dark"
+        self.current_font_size = 10
+        
+        # Configure modern window icon and title styling
+        if platform.system() == "Windows":
+            try:
+                # Set window icon if available
+                icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+                if os.path.exists(icon_path):
+                    self.root.iconbitmap(icon_path)
+            except:
+                pass
         
         # Variables
         self.device_var = tk.StringVar()
@@ -273,102 +491,355 @@ class ZigbeeProgrammerGUI:
         return True
         
     def create_widgets(self):
-        # Create menu bar
+        # Create modern menu bar
         self.create_menu()
         
-        # Main container
-        main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        # Main container with modern styling
+        main_container = tk.Frame(self.root, bg=ModernTheme.DARK_BG)
+        main_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
         
-        # Configure grid weights
-        self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(1, weight=1)
+        # Header section (more compact)
+        header_frame = tk.Frame(main_container, bg=ModernTheme.DARK_BG)
+        header_frame.pack(fill=tk.X, pady=(0, 15))
         
-        # Device selection
-        row = 0
-        ttk.Label(main_frame, text="Device:").grid(row=row, column=0, sticky=tk.W, pady=5)
-        self.device_combo = ttk.Combobox(main_frame, textvariable=self.device_var, 
-                                     values=self.device_display_names, state="readonly", width=40)
-        self.device_combo.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
+        title_label = tk.Label(header_frame, 
+                              text="Zigbee Device Programmer", 
+                              font=('Segoe UI', 16, 'bold'),
+                              fg=ModernTheme.TEXT_PRIMARY,
+                              bg=ModernTheme.DARK_BG)
+        title_label.pack(side=tk.LEFT)
+        
+        subtitle_label = tk.Label(header_frame,
+                                 text="Modern programming interface for Zigbee devices",
+                                 font=('Segoe UI', 9),
+                                 fg=ModernTheme.TEXT_SECONDARY,
+                                 bg=ModernTheme.DARK_BG)
+        subtitle_label.pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Main content area with cards
+        content_frame = tk.Frame(main_container, bg=ModernTheme.DARK_BG)
+        content_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Left panel for configuration (fixed width)
+        left_panel = tk.Frame(content_frame, bg=ModernTheme.DARK_BG, width=450)
+        left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        left_panel.pack_propagate(False)
+        
+        # Device Configuration Card
+        self.create_device_config_card(left_panel)
+        
+        # File Selection Card
+        self.create_file_selection_card(left_panel)
+        
+        # Programming Options Card
+        self.create_programming_options_card(left_panel)
+        
+        # Action Buttons Card
+        self.create_action_buttons_card(left_panel)
+        
+        # Right panel for log output
+        right_panel = tk.Frame(content_frame, bg=ModernTheme.DARK_BG)
+        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        
+        # Device Configuration Card
+        self.create_device_config_card(left_panel)
+        
+        # File Selection Card
+        self.create_file_selection_card(left_panel)
+        
+        # Programming Options Card
+        self.create_programming_options_card(left_panel)
+        
+        # Action Buttons Card
+        self.create_action_buttons_card(left_panel)
+        
+        # Right panel for log output
+        right_panel = tk.Frame(content_frame, bg=ModernTheme.DARK_BG, width=400)
+        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        right_panel.pack_propagate(False)
+        
+        # Log Output Card
+        self.create_log_output_card(right_panel)
+        
+        # Status bar at bottom
+        self.create_modern_status_bar(main_container)
+        
+        # Initialize states
+        self.update_status()
+        self.update_program_button_state()
+    
+    def create_card_frame(self, parent, title):
+        """Create a modern card-style frame with title"""
+        # Get current theme colors
+        bg_color = ModernTheme.DARK_BG if self.current_theme == "dark" else ModernTheme.LIGHT_BG
+        card_bg = ModernTheme.CARD_BG if self.current_theme == "dark" else ModernTheme.LIGHT_CARD_BG
+        text_color = ModernTheme.TEXT_PRIMARY if self.current_theme == "dark" else ModernTheme.LIGHT_TEXT_PRIMARY
+        border_color = ModernTheme.BORDER if self.current_theme == "dark" else ModernTheme.LIGHT_BORDER
+        
+        # Card container (reduced spacing)
+        card_container = tk.Frame(parent, bg=bg_color)
+        card_container.pack(fill=tk.X, pady=(0, 10))
+        
+        # Card header (more compact)
+        header_frame = tk.Frame(card_container, bg=card_bg, height=30)
+        header_frame.pack(fill=tk.X)
+        header_frame.pack_propagate(False)
+        
+        title_label = tk.Label(header_frame,
+                              text=title,
+                              font=('Segoe UI', 10, 'bold'),
+                              fg=text_color,
+                              bg=card_bg)
+        title_label.pack(side=tk.LEFT, padx=15, pady=8)
+        
+        # Card content
+        content_frame = tk.Frame(card_container, bg=card_bg, bd=1, relief='solid')
+        content_frame.pack(fill=tk.X)
+        content_frame.configure(highlightbackground=border_color, highlightcolor=border_color)
+        
+        return content_frame
+    
+    def create_device_config_card(self, parent):
+        """Create device configuration card"""
+        card_content = self.create_card_frame(parent, "Device Configuration")
+        
+        # Device selection with modern styling (reduced padding)
+        device_frame = tk.Frame(card_content, bg=ModernTheme.CARD_BG)
+        device_frame.pack(fill=tk.X, padx=15, pady=12)
+        
+        device_label = tk.Label(device_frame,
+                               text="Target Device",
+                               font=('Segoe UI', 9, 'bold'),
+                               fg=ModernTheme.TEXT_PRIMARY,
+                               bg=ModernTheme.CARD_BG)
+        device_label.pack(anchor=tk.W, pady=(0, 4))
+        
+        self.device_combo = ttk.Combobox(device_frame, 
+                                        textvariable=self.device_var,
+                                        values=self.device_display_names, 
+                                        state="readonly",
+                                        style="Modern.TCombobox",
+                                        font=('Segoe UI', 10))
+        self.device_combo.pack(fill=tk.X)
         if self.device_display_names:
             self.device_combo.current(0)
+    
+    def create_file_selection_card(self, parent):
+        """Create file selection card"""
+        card_content = self.create_card_frame(parent, "File Selection")
         
-        # Application file selection
-        row += 1
-        ttk.Label(main_frame, text="Application File:").grid(row=row, column=0, sticky=tk.W, pady=5)
-        app_frame = ttk.Frame(main_frame)
-        app_frame.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
-        app_frame.columnconfigure(0, weight=1)
+        # Application file selection (reduced padding)
+        app_frame = tk.Frame(card_content, bg=ModernTheme.CARD_BG)
+        app_frame.pack(fill=tk.X, padx=15, pady=(12, 8))
         
-        ttk.Entry(app_frame, textvariable=self.app_file_var).grid(row=0, column=0, sticky=(tk.W, tk.E))
-        ttk.Button(app_frame, text="Browse...", command=self.browse_app_file).grid(row=0, column=1, padx=(5, 0))
+        app_label = tk.Label(app_frame,
+                            text="Application File",
+                            font=('Segoe UI', 9, 'bold'),
+                            fg=ModernTheme.TEXT_PRIMARY,
+                            bg=ModernTheme.CARD_BG)
+        app_label.pack(anchor=tk.W, pady=(0, 4))
         
-        # Bootloader file selection (optional)
-        row += 1
-        ttk.Label(main_frame, text="Bootloader File:").grid(row=row, column=0, sticky=tk.W, pady=5)
-        boot_frame = ttk.Frame(main_frame)
-        boot_frame.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
-        boot_frame.columnconfigure(0, weight=1)
+        app_input_frame = tk.Frame(app_frame, bg=ModernTheme.CARD_BG)
+        app_input_frame.pack(fill=tk.X)
         
-        ttk.Entry(boot_frame, textvariable=self.bootloader_file_var).grid(row=0, column=0, sticky=(tk.W, tk.E))
-        ttk.Button(boot_frame, text="Browse...", command=self.browse_bootloader_file).grid(row=0, column=1, padx=(5, 0))
-        self.bootloader_optional_label = ttk.Label(main_frame, text="(Optional)", font=("", 8, "italic"))
-        self.bootloader_optional_label.grid(row=row, column=2, sticky=tk.W, padx=(5, 0))
+        self.app_entry = tk.Entry(app_input_frame,
+                                 textvariable=self.app_file_var,
+                                 font=('Segoe UI', 10),
+                                 bg=ModernTheme.CARD_BG,
+                                 fg=ModernTheme.TEXT_PRIMARY,
+                                 insertbackground=ModernTheme.TEXT_PRIMARY,
+                                 bd=1,
+                                 relief='solid',
+                                 highlightthickness=1,
+                                 highlightcolor=ModernTheme.ACCENT,
+                                 highlightbackground=ModernTheme.BORDER)
+        self.app_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         
-        # Erase before flash checkbox
-        row += 1
-        self.erase_checkbox = ttk.Checkbutton(main_frame, text="Erase Before Flash", 
-                                            variable=self.erase_before_flash,
-                                            command=self.on_erase_checkbox_changed)
-        self.erase_checkbox.grid(row=row, column=1, sticky=tk.W, pady=5, padx=(5, 0))
+        app_browse_btn = ttk.Button(app_input_frame,
+                                   text="Browse",
+                                   command=self.browse_app_file,
+                                   style="Modern.TButton")
+        app_browse_btn.pack(side=tk.RIGHT)
         
-        # Program button
-        row += 1
-        self.program_button = ttk.Button(main_frame, text="Program Device", command=self.program_device)
-        self.program_button.grid(row=row, column=0, columnspan=3, pady=20)
+        # Bootloader file selection (reduced padding)
+        boot_frame = tk.Frame(card_content, bg=ModernTheme.CARD_BG)
+        boot_frame.pack(fill=tk.X, padx=15, pady=(8, 12))
         
-        # Log window
-        row += 1
-        ttk.Label(main_frame, text="Log Output:").grid(row=row, column=0, sticky=tk.W, pady=(10, 5))
+        boot_label_frame = tk.Frame(boot_frame, bg=ModernTheme.CARD_BG)
+        boot_label_frame.pack(fill=tk.X, pady=(0, 4))
         
-        row += 1
-        log_frame = ttk.Frame(main_frame)
-        log_frame.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
-        log_frame.columnconfigure(0, weight=1)
-        log_frame.rowconfigure(0, weight=1)
-        main_frame.rowconfigure(row, weight=1)
+        boot_label = tk.Label(boot_label_frame,
+                             text="Bootloader File",
+                             font=('Segoe UI', 9, 'bold'),
+                             fg=ModernTheme.TEXT_PRIMARY,
+                             bg=ModernTheme.CARD_BG)
+        boot_label.pack(side=tk.LEFT)
         
-        self.log_text = scrolledtext.ScrolledText(log_frame, wrap=tk.WORD, height=15)
-        self.log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.bootloader_optional_label = tk.Label(boot_label_frame,
+                                                  text="(Optional)",
+                                                  font=('Segoe UI', 8, 'italic'),
+                                                  fg=ModernTheme.TEXT_SECONDARY,
+                                                  bg=ModernTheme.CARD_BG)
+        self.bootloader_optional_label.pack(side=tk.LEFT, padx=(5, 0))
         
-        # Clear log button
-        row += 1
-        button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=row, column=0, columnspan=3, pady=5)
+        boot_input_frame = tk.Frame(boot_frame, bg=ModernTheme.CARD_BG)
+        boot_input_frame.pack(fill=tk.X)
         
-        ttk.Button(button_frame, text="Clear Log", command=self.clear_log).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(button_frame, text="Check Commander", command=self.check_commander_status).pack(side=tk.LEFT)
+        self.boot_entry = tk.Entry(boot_input_frame,
+                                  textvariable=self.bootloader_file_var,
+                                  font=('Segoe UI', 10),
+                                  bg=ModernTheme.CARD_BG,
+                                  fg=ModernTheme.TEXT_PRIMARY,
+                                  insertbackground=ModernTheme.TEXT_PRIMARY,
+                                  bd=1,
+                                  relief='solid',
+                                  highlightthickness=1,
+                                  highlightcolor=ModernTheme.ACCENT,
+                                  highlightbackground=ModernTheme.BORDER)
+        self.boot_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         
-        # Status bar
-        row += 1
+        boot_browse_btn = ttk.Button(boot_input_frame,
+                                    text="Browse",
+                                    command=self.browse_bootloader_file,
+                                    style="Modern.TButton")
+        boot_browse_btn.pack(side=tk.RIGHT)
+    
+    def create_programming_options_card(self, parent):
+        """Create programming options card"""
+        card_content = self.create_card_frame(parent, "Programming Options")
+        
+        options_frame = tk.Frame(card_content, bg=ModernTheme.CARD_BG)
+        options_frame.pack(fill=tk.X, padx=15, pady=12)
+        
+        self.erase_checkbox = ttk.Checkbutton(options_frame,
+                                             text="Erase Before Flash",
+                                             variable=self.erase_before_flash,
+                                             command=self.on_erase_checkbox_changed,
+                                             style="Modern.TCheckbutton")
+        self.erase_checkbox.pack(anchor=tk.W)
+        
+        erase_info = tk.Label(options_frame,
+                             text="Performs a full device erase before programming",
+                             font=('Segoe UI', 8),
+                             fg=ModernTheme.TEXT_SECONDARY,
+                             bg=ModernTheme.CARD_BG)
+        erase_info.pack(anchor=tk.W, pady=(3, 0))
+    
+    def create_action_buttons_card(self, parent):
+        """Create action buttons card"""
+        card_content = self.create_card_frame(parent, "Actions")
+        
+        button_frame = tk.Frame(card_content, bg=ModernTheme.CARD_BG)
+        button_frame.pack(fill=tk.X, padx=15, pady=12)
+        
+        # Primary program button
+        self.program_button = ttk.Button(button_frame,
+                                        text="Program Device",
+                                        command=self.program_device,
+                                        style="Primary.TButton")
+        self.program_button.pack(fill=tk.X, pady=(0, 8))
+        
+        # Secondary action buttons
+        secondary_frame = tk.Frame(button_frame, bg=ModernTheme.CARD_BG)
+        secondary_frame.pack(fill=tk.X)
+        
+        check_btn = ttk.Button(secondary_frame,
+                              text="Check Commander",
+                              command=self.check_commander_status,
+                              style="Modern.TButton")
+        check_btn.pack(side=tk.LEFT, padx=(0, 8))
+        
+        clear_btn = ttk.Button(secondary_frame,
+                              text="Clear Log",
+                              command=self.clear_log,
+                              style="Modern.TButton")
+        clear_btn.pack(side=tk.LEFT)
+    
+    def create_log_output_card(self, parent):
+        """Create log output card"""
+        card_content = self.create_card_frame(parent, "Log Output")
+        
+        log_frame = tk.Frame(card_content, bg=ModernTheme.CARD_BG)
+        log_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=12)
+        
+        # Create custom styled text widget
+        self.log_text = tk.Text(log_frame,
+                               wrap=tk.WORD,
+                               font=('Consolas', 9),
+                               bg=ModernTheme.DARKER_BG,
+                               fg=ModernTheme.TEXT_PRIMARY,
+                               insertbackground=ModernTheme.TEXT_PRIMARY,
+                               selectbackground=ModernTheme.ACCENT,
+                               selectforeground=ModernTheme.TEXT_PRIMARY,
+                               bd=1,
+                               relief='solid',
+                               highlightthickness=0)
+        
+        # Create custom scrollbar
+        scrollbar = tk.Scrollbar(log_frame,
+                                bg=ModernTheme.CARD_BG,
+                                troughcolor=ModernTheme.DARKER_BG,
+                                activebackground=ModernTheme.ACCENT,
+                                highlightthickness=0)
+        
+        self.log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.log_text.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=self.log_text.yview)
+        
+        # Configure text tags for colored output
+        self.log_text.tag_configure("success", foreground=ModernTheme.SUCCESS)
+        self.log_text.tag_configure("warning", foreground=ModernTheme.WARNING)
+        self.log_text.tag_configure("error", foreground=ModernTheme.ERROR)
+        self.log_text.tag_configure("info", foreground=ModernTheme.ACCENT)
+    
+    def create_modern_status_bar(self, parent):
+        """Create modern status bar"""
+        status_frame = tk.Frame(parent, bg=ModernTheme.DARKER_BG, height=25)
+        status_frame.pack(fill=tk.X, pady=(15, 0))
+        status_frame.pack_propagate(False)
+        
         self.status_var = tk.StringVar()
-        self.status_label = ttk.Label(main_frame, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
-        self.status_label.grid(row=row, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(10, 0))
-        
-        # Update status
-        self.update_status()
-        
-        # Initialize program button state
-        self.update_program_button_state()
+        self.status_label = tk.Label(status_frame,
+                                    textvariable=self.status_var,
+                                    font=('Segoe UI', 8),
+                                    fg=ModernTheme.TEXT_SECONDARY,
+                                    bg=ModernTheme.DARKER_BG,
+                                    anchor=tk.W)
+        self.status_label.pack(fill=tk.X, padx=12, pady=4)
         
     def create_menu(self):
-        """Create the application menu"""
-        menubar = tk.Menu(self.root)
+        """Create the application menu with modern styling"""
+        menubar = tk.Menu(self.root,
+                         bg=ModernTheme.CARD_BG,
+                         fg=ModernTheme.TEXT_PRIMARY,
+                         activebackground=ModernTheme.ACCENT,
+                         activeforeground=ModernTheme.TEXT_PRIMARY,
+                         borderwidth=0)
         self.root.config(menu=menubar)
         
+        # View menu for theme options
+        view_menu = tk.Menu(menubar, tearoff=0,
+                           bg=ModernTheme.CARD_BG,
+                           fg=ModernTheme.TEXT_PRIMARY,
+                           activebackground=ModernTheme.ACCENT,
+                           activeforeground=ModernTheme.TEXT_PRIMARY,
+                           borderwidth=0)
+        menubar.add_cascade(label="View", menu=view_menu)
+        view_menu.add_command(label="Toggle Dark/Light Theme", command=self.toggle_theme)
+        view_menu.add_separator()
+        view_menu.add_command(label="Increase Font Size", command=self.increase_font_size)
+        view_menu.add_command(label="Decrease Font Size", command=self.decrease_font_size)
+        view_menu.add_command(label="Reset Font Size", command=self.reset_font_size)
+        
         # Tools menu
-        tools_menu = tk.Menu(menubar, tearoff=0)
+        tools_menu = tk.Menu(menubar, tearoff=0,
+                            bg=ModernTheme.CARD_BG,
+                            fg=ModernTheme.TEXT_PRIMARY,
+                            activebackground=ModernTheme.ACCENT,
+                            activeforeground=ModernTheme.TEXT_PRIMARY,
+                            borderwidth=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
         tools_menu.add_command(label="Check Commander Status", command=self.check_commander_status)
         tools_menu.add_command(label="Set Commander Path...", command=self.set_commander_path)
@@ -384,9 +855,16 @@ class ZigbeeProgrammerGUI:
             tools_menu.add_command(label="Restart as Administrator", command=self.restart_as_admin)
         
         # Help menu
-        help_menu = tk.Menu(menubar, tearoff=0)
+        help_menu = tk.Menu(menubar, tearoff=0,
+                           bg=ModernTheme.CARD_BG,
+                           fg=ModernTheme.TEXT_PRIMARY,
+                           activebackground=ModernTheme.ACCENT,
+                           activeforeground=ModernTheme.TEXT_PRIMARY,
+                           borderwidth=0)
         menubar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About Commander", command=self.show_commander_help)
+        help_menu.add_separator()
+        help_menu.add_command(label="About Application", command=self.show_about)
     
     def set_commander_path(self):
         """Allow user to manually set the commander path"""
@@ -696,11 +1174,11 @@ For support, visit: https://community.silabs.com/"""
         """Handle the erase before flash checkbox state change"""
         if self.erase_before_flash.get():
             # When erase is checked, bootloader becomes mandatory
-            self.bootloader_optional_label.config(text="(Required for Erase)", foreground="red")
+            self.bootloader_optional_label.config(text="(Required for Erase)", fg=ModernTheme.ERROR)
             self.debug_log("Erase before flash enabled - bootloader is now required")
         else:
             # When erase is unchecked, bootloader is optional again
-            self.bootloader_optional_label.config(text="(Optional)", foreground="black")
+            self.bootloader_optional_label.config(text="(Optional)", fg=ModernTheme.TEXT_SECONDARY)
             self.debug_log("Erase before flash disabled - bootloader is now optional")
         
         # Update program button state
@@ -738,11 +1216,42 @@ For support, visit: https://community.silabs.com/"""
             if erase_enabled and not bootloader_valid:
                 self.debug_log("  Reason: Erase enabled but no valid bootloader file selected")
     
-    def log(self, message):
-        """Add message to log window"""
-        self.log_text.insert(tk.END, message + "\n")
+    def log(self, message, level="info"):
+        """Add message to log window with color coding
+        
+        Args:
+            message: Message to log
+            level: Log level - "info", "success", "warning", "error"
+        """
+        # Add timestamp
+        import datetime
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+        formatted_message = f"[{timestamp}] {message}\n"
+        
+        # Insert with appropriate color tag
+        start_pos = self.log_text.index(tk.END)
+        self.log_text.insert(tk.END, formatted_message)
+        
+        if level != "info":
+            # Apply color tag to the entire line
+            line_start = f"{start_pos.split('.')[0]}.0"
+            line_end = f"{int(start_pos.split('.')[0]) + 1}.0"
+            self.log_text.tag_add(level, line_start, line_end)
+        
         self.log_text.see(tk.END)
         self.root.update_idletasks()
+    
+    def log_success(self, message):
+        """Log success message in green"""
+        self.log(message, "success")
+    
+    def log_warning(self, message):
+        """Log warning message in orange"""
+        self.log(message, "warning")
+    
+    def log_error(self, message):
+        """Log error message in red"""
+        self.log(message, "error")
     
     def clear_log(self):
         """Clear the log window"""
@@ -1274,6 +1783,71 @@ For support, visit: https://community.silabs.com/"""
         # Run programming in a separate thread to keep UI responsive
         thread = threading.Thread(target=self.program_device_thread, daemon=True)
         thread.start()
+    
+    def toggle_theme(self):
+        """Toggle between dark and light themes"""
+        new_theme = "light" if self.current_theme == "dark" else "dark"
+        self.current_theme = new_theme
+        
+        # Recreate the entire interface with new theme
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        
+        # Reapply theme and recreate widgets
+        self.style = ModernTheme.configure_modern_style(self.root, theme=new_theme)
+        self.create_widgets()
+        
+        self.log_success(f"Theme changed to {new_theme} mode")
+    
+    def increase_font_size(self):
+        """Increase application font size"""
+        if self.current_font_size < 16:
+            self.current_font_size += 1
+            self.update_font_sizes()
+            self.log_success(f"Font size increased to {self.current_font_size}")
+    
+    def decrease_font_size(self):
+        """Decrease application font size"""
+        if self.current_font_size > 8:
+            self.current_font_size -= 1
+            self.update_font_sizes()
+            self.log_success(f"Font size decreased to {self.current_font_size}")
+    
+    def reset_font_size(self):
+        """Reset font size to default"""
+        self.current_font_size = 10
+        self.update_font_sizes()
+        self.log_success("Font size reset to default")
+    
+    def update_font_sizes(self):
+        """Update all font sizes to current setting"""
+        # Update various UI elements with new font size
+        try:
+            if hasattr(self, 'log_text'):
+                self.log_text.configure(font=('Consolas', self.current_font_size - 1))
+            if hasattr(self, 'device_combo'):
+                self.device_combo.configure(font=('Segoe UI', self.current_font_size))
+        except:
+            pass
+    
+    def show_about(self):
+        """Show application about dialog"""
+        about_text = """Zigbee Device Programmer
+        
+A modern GUI application for programming Zigbee devices using Silicon Labs Simplicity Commander.
+
+Features:
+• Modern dark/light theme interface
+• Device version verification
+• Mass erase before programming
+• JSON device mapping configuration
+• Debug mode for detailed logging
+• Commander status checking
+
+Version: 2.0
+Built with Python and tkinter"""
+        
+        messagebox.showinfo("About Zigbee Device Programmer", about_text)
 
 
 def main():
