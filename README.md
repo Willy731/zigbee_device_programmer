@@ -9,6 +9,10 @@ A GUI application to program Zigbee devices using Simplicity Commander.
 - **Bootloader Programming**: Optionally flash bootloader files
 - **Real-time Logging**: View command output and programming progress
 - **Version Verification**: Automatically verify application version after programming
+- **Hex to Version Parsing**: Converts hex version values to readable format (e.g., 0x01010005 → 1.1.5)
+- **Commander Auto-Detection**: Automatically finds Simplicity Commander installation
+- **Permission Management**: Handles administrator privileges and device access
+- **Device Connection Testing**: Test device connectivity before programming
 
 ## Prerequisites
 
@@ -48,7 +52,29 @@ python3 zigbee_programmer.py
    - Flash the bootloader (if provided)
    - Flash the application firmware
    - Read device memory and verify the application version
+   - Parse hex version values to readable format (e.g., 0x01010005 → 1.1.5)
    - Display the verification results in the log
+
+## Advanced Features
+
+### Version Parsing
+The application automatically converts hex version values to readable format:
+- **Byte-structured parsing**: `0x01010005` → `1.1.5` (major.minor.patch)
+- **Integer math parsing**: Decimal `1001005` → `1.1.5` (calculated as major*1000000 + minor*1000 + patch)
+- **Multiple format support**: Handles various hex formats and decimal values
+
+### Tools Menu
+- **Check Commander Status**: Verify Simplicity Commander installation and functionality
+- **Set Commander Path**: Manually specify Commander executable location  
+- **Test Device Connection**: Check device connectivity and permissions
+- **Refresh Commander**: Re-scan for Commander installation
+- **Restart as Administrator**: Restart with elevated privileges (Windows only)
+
+### Troubleshooting Tools
+- Real-time status bar showing Commander availability and admin status
+- Comprehensive error messages with specific guidance
+- Automatic detection of common installation paths
+- Permission verification and guidance
 
 ## Supported Devices
 
@@ -73,9 +99,28 @@ The application uses the following Simplicity Commander commands:
 
 ## Troubleshooting
 
-- **"commander not found" error**: Ensure Simplicity Commander is installed and added to your system PATH
-- **Device not detected**: Check that your device is properly connected and drivers are installed
-- **Programming failed**: Check the log output for specific error messages
+- **"commander not found" error**: 
+  - Use "Tools > Check Commander Status" to verify installation
+  - Try "Tools > Set Commander Path" to manually specify location
+  - Install Simplicity Studio or Commander standalone
+- **Permission errors**: 
+  - Use "Tools > Restart as Administrator" (Windows)
+  - Ensure J-Link drivers are properly installed
+- **Device not detected**: 
+  - Use "Tools > Test Device Connection" to diagnose issues
+  - Check device power and USB connection
+  - Verify correct device type selection
+- **Programming failed**: 
+  - Check the detailed log output for specific error messages
+  - Ensure device is not in use by other applications
+  - Try disconnecting and reconnecting the device
+
+## Version Parsing Examples
+
+The application converts hex version values as follows:
+- `0x01010005` → `1.1.5` (byte parsing: 01.01.00.05)
+- `0x02000003` → `2.0.3` (byte parsing: 02.00.00.03)  
+- `1001005` (decimal) → `1.1.5` (integer math: 1*1000000 + 1*1000 + 5)
 
 ## License
 

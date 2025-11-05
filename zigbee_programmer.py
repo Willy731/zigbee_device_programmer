@@ -547,11 +547,34 @@ For support, visit: https://community.silabs.com/"""
             
             if success:
                 # Parse and highlight app version
+                version_found = False
                 for line in stdout.split('\n'):
                     if 'App version' in line:
-                        self.log(f">>> {line.strip()} <<<")
-                self.log("Application version verified successfully!")
-                return True
+                        version_found = True
+                        original_line, parsed_version, decimal_value = self.parse_app_version(line)
+                        
+                        self.log(f">>> {original_line.strip()} <<<")
+                        
+                        if parsed_version and decimal_value:
+                            self.log(f">>> Parsed Version: {parsed_version} (decimal: {decimal_value}) <<<")
+                            
+                            # Also try integer math method for comparison
+                            if decimal_value >= 1000000:
+                                int_major = decimal_value // 1000000
+                                int_minor = (decimal_value % 1000000) // 1000
+                                int_patch = decimal_value % 1000
+                                int_version = f"{int_major}.{int_minor}.{int_patch}"
+                                if int_version != parsed_version:
+                                    self.log(f">>> Alternative parse (int math): {int_version} <<<")
+                        else:
+                            self.log(">>> Could not parse version number <<<")
+                
+                if version_found:
+                    self.log("Application version verified successfully!")
+                    return True
+                else:
+                    self.log("No application version found in output")
+                    return False
             else:
                 self.log("ERROR: Failed to get application info")
                 return False
@@ -562,6 +585,71 @@ For support, visit: https://community.silabs.com/"""
                     os.remove(dump_file)
             except (OSError, PermissionError) as e:
                 self.log(f"Warning: Could not remove temporary file {dump_file}: {e}")
+    
+    def parse_app_version(self, version_line):
+        """Parse application version from hex to decimal and format as version string
+        
+        Args:
+            version_line: String containing the app version line from commander output
+            
+        Returns:
+            tuple: (original_line, parsed_version, decimal_value) or (original_line, None, None) if parsing fails
+        """
+        import re
+        
+        # Look for hex values in the line (e.g., 0x01010005, 0x1010005, etc.)
+        hex_pattern = r'0x([0-9a-fA-F]+)'
+        hex_matches = re.findall(hex_pattern, version_line)
+        
+        if not hex_matches:
+            # Try to find just hex digits after common prefixes
+            hex_pattern = r'(?:version[:\s]+|v[:\s]*)?([0-9a-fA-F]{6,8})'
+            hex_matches = re.findall(hex_pattern, version_line, re.IGNORECASE)
+        
+        if hex_matches:
+            # Use the first hex value found
+            hex_value = hex_matches[0]
+            try:
+                # Convert hex to decimal
+                decimal_value = int(hex_value, 16)
+                
+                # Try to parse as byte-structured version first (e.g., 0x01010005 = v1.1.5)
+                if len(hex_value) >= 6:  # At least 6 hex digits
+                    # Pad to 8 digits if needed
+                    padded_hex = hex_value.zfill(8)
+                    
+                    # Extract bytes: 0x01010005 -> 01, 01, 00, 05
+                    byte3 = int(padded_hex[0:2], 16)  # Major version
+                    byte2 = int(padded_hex[2:4], 16)  # Minor version  
+                    byte1 = int(padded_hex[4:6], 16)  # Usually 0
+                    byte0 = int(padded_hex[6:8], 16)  # Patch version
+                    
+                    # Format as version string
+                    if byte1 == 0:  # Standard case: major.minor.patch
+                        parsed_version = f"{byte3}.{byte2}.{byte0}"
+                    else:  # Include all components
+                        parsed_version = f"{byte3}.{byte2}.{byte1}.{byte0}"
+                else:
+                    # Fallback: Parse decimal as version (assuming format: major*1000000 + minor*1000 + patch)
+                    if decimal_value >= 1000000:
+                        major = decimal_value // 1000000
+                        minor = (decimal_value % 1000000) // 1000
+                        patch = decimal_value % 1000
+                        parsed_version = f"{major}.{minor}.{patch}"
+                    else:
+                        # Handle smaller values
+                        if decimal_value >= 1000:
+                            major = decimal_value // 1000
+                            minor = decimal_value % 1000
+                            parsed_version = f"{major}.{minor}"
+                        else:
+                            parsed_version = str(decimal_value)
+                
+                return version_line, parsed_version, decimal_value
+            except ValueError:
+                pass
+        
+        return version_line, None, None
     
     def program_device_thread(self):
         """Thread function to program the device"""
