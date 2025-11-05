@@ -42,6 +42,9 @@ class ZigbeeProgrammerGUI:
         # Display names for the dropdown
         self.device_display_names = list(self.device_mapping.keys())
         
+        # Debug mode for verbose logging
+        self.debug_mode = False
+        
         # Find commander executable on startup
         self.find_commander()
         
@@ -230,6 +233,8 @@ class ZigbeeProgrammerGUI:
         tools_menu.add_command(label="Set Commander Path...", command=self.set_commander_path)
         tools_menu.add_command(label="Test Device Connection", command=self.test_device_connection)
         tools_menu.add_separator()
+        tools_menu.add_command(label="Toggle Debug Mode", command=self.toggle_debug_mode)
+        tools_menu.add_separator()
         tools_menu.add_command(label="Refresh Commander", command=self.refresh_commander)
         if platform.system() == "Windows":
             tools_menu.add_separator()
@@ -390,6 +395,14 @@ To use this application, you need Simplicity Commander installed:
 
 5. Ensure your J-Link drivers are installed and the device is connected.
 
+DEBUG MODE:
+Use 'Tools > Toggle Debug Mode' to enable verbose logging:
+• Shows detailed command execution information
+• Displays file operation details and validation steps
+• Provides enhanced version parsing information
+• Includes exception context and timing information
+• Status bar shows "DEBUG MODE" when active
+
 PERMISSION ISSUES:
 If you get "access denied" or "permission" errors:
 • Run this application as Administrator
@@ -400,6 +413,7 @@ If you get "access denied" or "permission" errors:
 TROUBLESHOOTING:
 • Use 'Tools > Check Commander Status' to verify installation
 • Use 'Tools > Test Device Connection' to check device connectivity
+• Enable 'Tools > Toggle Debug Mode' for detailed logging
 • Check the log output for detailed error messages
 
 For support, visit: https://community.silabs.com/"""
@@ -432,6 +446,34 @@ For support, visit: https://community.silabs.com/"""
         
         self.update_status()
     
+    def toggle_debug_mode(self):
+        """Toggle debug mode for verbose logging"""
+        self.debug_mode = not self.debug_mode
+        
+        if self.debug_mode:
+            self.log("=" * 60)
+            self.log("DEBUG MODE ENABLED")
+            self.log("Verbose logging is now active")
+            self.log("=" * 60)
+            messagebox.showinfo("Debug Mode", "Debug mode enabled!\n\nVerbose logging is now active. You will see more detailed information in the log output.")
+        else:
+            self.log("=" * 60)
+            self.log("DEBUG MODE DISABLED")
+            self.log("Verbose logging is now inactive")
+            self.log("=" * 60)
+            messagebox.showinfo("Debug Mode", "Debug mode disabled!\n\nVerbose logging is now inactive.")
+        
+        self.update_status()
+    
+    def debug_log(self, message):
+        """Add debug message to log window (only if debug mode is enabled)
+        
+        Args:
+            message: Debug message to log
+        """
+        if self.debug_mode:
+            self.log(f"[DEBUG] {message}")
+    
     def update_status(self):
         """Update the status bar"""
         status_parts = []
@@ -447,6 +489,9 @@ For support, visit: https://community.silabs.com/"""
             else:
                 status_parts.append("Running as User")
         
+        if self.debug_mode:
+            status_parts.append("DEBUG MODE")
+        
         self.status_var.set(" | ".join(status_parts))
         
     def browse_app_file(self):
@@ -460,6 +505,11 @@ For support, visit: https://community.silabs.com/"""
         if filename:
             self.app_file_var.set(filename)
             self.log(f"Selected application file: {filename}")
+            self.debug_log(f"Application file selected - path: {filename}")
+            self.debug_log(f"File size: {os.path.getsize(filename) if os.path.exists(filename) else 'File not found'} bytes")
+            self.debug_log(f"File extension: {os.path.splitext(filename)[1]}")
+        else:
+            self.debug_log("Application file selection cancelled by user")
     
     def browse_bootloader_file(self):
         filename = filedialog.askopenfilename(
@@ -472,6 +522,11 @@ For support, visit: https://community.silabs.com/"""
         if filename:
             self.bootloader_file_var.set(filename)
             self.log(f"Selected bootloader file: {filename}")
+            self.debug_log(f"Bootloader file selected - path: {filename}")
+            self.debug_log(f"File size: {os.path.getsize(filename) if os.path.exists(filename) else 'File not found'} bytes")
+            self.debug_log(f"File extension: {os.path.splitext(filename)[1]}")
+        else:
+            self.debug_log("Bootloader file selection cancelled by user")
     
     def log(self, message):
         """Add message to log window"""
@@ -500,8 +555,15 @@ For support, visit: https://community.silabs.com/"""
         if command[0] == "commander":
             command[0] = self.commander_path
         
+        self.debug_log(f"Command to execute: {command}")
+        self.debug_log(f"Working directory: {os.getcwd()}")
+        self.debug_log(f"Commander path: {self.commander_path}")
+        
         try:
             self.log(f"Running command: {' '.join(command)}")
+            
+            self.debug_log(f"Timeout set to: {self.COMMANDER_TIMEOUT} seconds")
+            
             result = subprocess.run(
                 command,
                 capture_output=True,
@@ -509,23 +571,36 @@ For support, visit: https://community.silabs.com/"""
                 timeout=self.COMMANDER_TIMEOUT
             )
             
+            self.debug_log(f"Command return code: {result.returncode}")
+            self.debug_log(f"Command execution time: subprocess completed")
+            
             # Log stdout
             if result.stdout:
-                self.log(result.stdout)
+                self.debug_log(result.stdout)
+            else:
+                self.debug_log("No stdout output")
             
             # Log stderr
             if result.stderr:
-                self.log(result.stderr)
+                self.debug_log(result.stderr)
+            else:
+                self.debug_log("No stderr output")
             
-            return result.returncode == 0, result.stdout, result.stderr
+            success = result.returncode == 0
+            self.debug_log(f"Command success: {success}")
+            
+            return success, result.stdout, result.stderr
         except subprocess.TimeoutExpired:
             self.log(f"ERROR: Command timed out after {self.COMMANDER_TIMEOUT} seconds")
+            self.debug_log("Timeout exception caught")
             return False, "", "Timeout"
         except FileNotFoundError:
             self.log("ERROR: 'commander' not found. Please ensure Simplicity Commander is installed and in PATH")
+            self.debug_log("FileNotFoundError exception caught")
             return False, "", "Commander not found"
         except Exception as e:
             self.log(f"ERROR: {str(e)}")
+            self.debug_log(f"Unexpected exception: {type(e).__name__}: {str(e)}")
             return False, "", str(e)
     
     def verify_app_version(self, device_display, app_file=None):
@@ -548,15 +623,20 @@ For support, visit: https://community.silabs.com/"""
         expected_version = None
         expected_decimal = None
         if app_file:
+            self.debug_log(f"Analyzing filename: {app_file}")
             expected_version, expected_decimal = self.extract_version_from_filename(app_file)
             if expected_version:
-                self.log(f"Expected version from filename: {expected_version} (decimal: {expected_decimal})")
+                self.debug_log(f"Expected version from filename: {expected_version} (decimal: {expected_decimal})")
             else:
-                self.log("Could not extract version from filename")
+                self.debug_log(f"Version extraction failed for filename: {app_file}")
+        else:
+            self.debug_log("No app file provided for version comparison")
         
         # Create temporary file for device dump
         with tempfile.NamedTemporaryFile(mode='w+b', suffix='.bin', delete=False) as tmp_file:
             dump_file = tmp_file.name
+        
+        self.debug_log(f"Created temporary dump file: {dump_file}")
         
         try:
             # Read device memory
@@ -567,32 +647,41 @@ For support, visit: https://community.silabs.com/"""
                 "--device", device
             ]
             
+            self.debug_log("Starting device memory read operation")
             success, stdout, stderr = self.run_commander_command(readmem_cmd)
             
             if not success:
                 self.log("ERROR: Failed to read device memory")
+                self.debug_log(f"Memory read failed - stdout: {stdout}, stderr: {stderr}")
                 return False
+            
+            self.debug_log("Device memory read completed successfully")
             
             # Get application info
             appinfo_cmd = ["commander", "util", "appinfo", dump_file]
+            self.debug_log("Starting application info extraction")
             success, stdout, stderr = self.run_commander_command(appinfo_cmd)
             
             if success:
+                self.debug_log(f"Application info extraction successful, processing {len(stdout.split())} lines of output")
+                
                 # Parse and highlight app version - only validate the FIRST app version found
                 version_found = False
                 version_matches = False
                 first_version_processed = False
                 device_versions = []  # Store all versions found on device
                 
-                for line in stdout.split('\n'):
+                for line_num, line in enumerate(stdout.split('\n'), 1):
                     if 'App version' in line:
+                        self.debug_log(f"Found app version line {line_num}: {line.strip()}")
                         version_found = True
                         original_line, parsed_version, decimal_value = self.parse_app_version(line)
                         
                         self.log(f">>> {original_line.strip()} <<<")
                         
                         if parsed_version and decimal_value:
-                            self.log(f">>> Parsed Version: {parsed_version} (decimal: {decimal_value}) <<<")
+                            self.debug_log(f">>> Parsed Version: {parsed_version} (decimal: {decimal_value}) <<<")
+                            self.debug_log(f"Version parsing successful: {parsed_version}, decimal: {decimal_value}")
                             device_versions.append((parsed_version, decimal_value))
                             
                             # Calculate alternative parse (int math) for comparison
@@ -603,10 +692,12 @@ For support, visit: https://community.silabs.com/"""
                                 int_patch = decimal_value % 1000
                                 int_version = f"{int_major}.{int_minor}.{int_patch}"
                                 if int_version != parsed_version:
-                                    self.log(f">>> Alternative parse (int math): {int_version} <<<")
+                                    self.debug_log(f">>> Alternative parse (int math): {int_version} <<<")
+                                    self.debug_log(f"Alternative parsing: {int_version} vs byte parsing: {parsed_version}")
                             
                             # Only validate the FIRST app version against the filename
                             if not first_version_processed and expected_version and expected_decimal:
+                                self.debug_log("Processing first app version for validation")
                                 first_version_processed = True
                                 version_match = False
                                 match_reason = ""
@@ -616,9 +707,11 @@ For support, visit: https://community.silabs.com/"""
                                 if int_version and int_version != parsed_version:
                                     comparison_version = int_version
                                     match_type = "int math"
+                                    self.debug_log(f"Using int math version for comparison: {int_version}")
                                 else:
                                     comparison_version = parsed_version  
                                     match_type = "byte parsing"
+                                    self.debug_log(f"Using byte parsing version for comparison: {parsed_version}")
                                 
                                 # Compare using string comparison
                                 if comparison_version == expected_version:
@@ -633,6 +726,8 @@ For support, visit: https://community.silabs.com/"""
                                     version_match = True
                                     match_reason = f"string match (ignoring expected trailing .0, {match_type})"
                                 
+                                self.debug_log(f"Version comparison: {comparison_version} vs {expected_version} = {version_match}")
+                                
                                 if version_match:
                                     self.log(f">>> ✓ VERSION MATCH: Device version {comparison_version} matches filename version {expected_version} ({match_reason}) <<<")
                                     version_matches = True
@@ -640,6 +735,7 @@ For support, visit: https://community.silabs.com/"""
                                 else:
                                     self.log(f">>> ✗ VERSION MISMATCH: Expected {expected_version} but device has {comparison_version} ({match_type}) <<<")
                             elif first_version_processed:
+                                self.debug_log(f"Secondary app version found (not validated): {parsed_version}")
                                 # Show alternative parsing for secondary versions but don't validate
                                 if decimal_value >= 1000000:
                                     int_major = decimal_value // 1000000
@@ -651,34 +747,44 @@ For support, visit: https://community.silabs.com/"""
                                 self.log(">>> (Secondary app version - not validated) <<<")
                         else:
                             self.log(">>> Could not parse version number <<<")
+                            self.debug_log(f"Version parsing failed for line: {line.strip()}")
                             if not first_version_processed and expected_version:
                                 first_version_processed = True
                                 self.log(f">>> ✗ VERSION MISMATCH: Could not parse device version, expected {expected_version} <<<")
+                
+                self.debug_log(f"Version processing complete. Found {len(device_versions)} versions on device")
                 
                 # Summary of version verification (only for the first version)
                 if version_found:
                     if expected_version:
                         if version_matches:
                             self.log(">>> ✓ VERSION VERIFICATION PASSED: Device version matches filename! <<<")
+                            self.debug_log("Version verification PASSED")
                         else:
                             self.log(">>> ✗ VERSION VERIFICATION FAILED: Device version does not match filename! <<<")
+                            self.debug_log("Version verification FAILED")
                             return False  # Return false on version mismatch
                     else:
                         self.log("Application version verified successfully!")
+                        self.debug_log("Version verification completed (no filename comparison)")
                     return True
                 else:
                     self.log("No application version found in output")
+                    self.debug_log("No app version found in commander output")
                     return False
             else:
                 self.log("ERROR: Failed to get application info")
+                self.debug_log(f"Application info failed - stdout: {stdout}, stderr: {stderr}")
                 return False
         finally:
             # Clean up temporary file
             try:
                 if os.path.exists(dump_file):
                     os.remove(dump_file)
+                    self.debug_log(f"Temporary file removed: {dump_file}")
             except (OSError, PermissionError) as e:
                 self.log(f"Warning: Could not remove temporary file {dump_file}: {e}")
+                self.debug_log(f"Failed to remove temporary file: {e}")
     
     def parse_app_version(self, version_line):
         """Parse application version from hex to decimal and format as version string
@@ -691,11 +797,14 @@ For support, visit: https://community.silabs.com/"""
         """
         import re
         
+        self.debug_log(f"Parsing version line: {version_line.strip()}")
+        
         # Look for hex values in the line (e.g., 0x01010005, 0x1010005, etc.)
         hex_pattern = r'0x([0-9a-fA-F]+)'
         hex_matches = re.findall(hex_pattern, version_line)
         
         if not hex_matches:
+            self.debug_log("No hex pattern (0x...) found, trying alternative pattern")
             # Try to find just hex digits after common prefixes
             hex_pattern = r'(?:version[:\s]+|v[:\s]*)?([0-9a-fA-F]{6,8})'
             hex_matches = re.findall(hex_pattern, version_line, re.IGNORECASE)
@@ -703,14 +812,18 @@ For support, visit: https://community.silabs.com/"""
         if hex_matches:
             # Use the first hex value found
             hex_value = hex_matches[0]
+            self.debug_log(f"Found hex value: {hex_value}")
+            
             try:
                 # Convert hex to decimal
                 decimal_value = int(hex_value, 16)
+                self.debug_log(f"Hex to decimal conversion: {hex_value} -> {decimal_value}")
                 
                 # Try to parse as byte-structured version first (e.g., 0x01010005 = v1.1.5)
                 if len(hex_value) >= 6:  # At least 6 hex digits
                     # Pad to 8 digits if needed
                     padded_hex = hex_value.zfill(8)
+                    self.debug_log(f"Padded hex: {padded_hex}")
                     
                     # Extract bytes: 0x01010005 -> 01, 01, 00, 05
                     byte3 = int(padded_hex[0:2], 16)  # Major version
@@ -718,31 +831,43 @@ For support, visit: https://community.silabs.com/"""
                     byte1 = int(padded_hex[4:6], 16)  # Usually 0
                     byte0 = int(padded_hex[6:8], 16)  # Patch version
                     
+                    self.debug_log(f"Byte extraction: {byte3}.{byte2}.{byte1}.{byte0}")
+                    
                     # Format as version string
                     if byte1 == 0:  # Standard case: major.minor.patch
                         parsed_version = f"{byte3}.{byte2}.{byte0}"
+                        self.debug_log(f"Standard 3-part version: {parsed_version}")
                     else:  # Include all components
                         parsed_version = f"{byte3}.{byte2}.{byte1}.{byte0}"
+                        self.debug_log(f"4-part version: {parsed_version}")
                 else:
+                    self.debug_log("Hex value too short, using fallback decimal parsing")
                     # Fallback: Parse decimal as version (assuming format: major*1000000 + minor*1000 + patch)
                     if decimal_value >= 1000000:
                         major = decimal_value // 1000000
                         minor = (decimal_value % 1000000) // 1000
                         patch = decimal_value % 1000
                         parsed_version = f"{major}.{minor}.{patch}"
+                        self.debug_log(f"Decimal math version: {parsed_version}")
                     else:
                         # Handle smaller values
                         if decimal_value >= 1000:
                             major = decimal_value // 1000
                             minor = decimal_value % 1000
                             parsed_version = f"{major}.{minor}"
+                            self.debug_log(f"2-part version: {parsed_version}")
                         else:
                             parsed_version = str(decimal_value)
+                            self.debug_log(f"Single number version: {parsed_version}")
                 
+                self.debug_log(f"Final parsed version: {parsed_version}, decimal: {decimal_value}")
                 return version_line, parsed_version, decimal_value
-            except ValueError:
-                pass
+            except ValueError as e:
+                self.debug_log(f"ValueError during hex conversion: {e}")
+        else:
+            self.debug_log("No hex values found in version line")
         
+        self.debug_log("Version parsing failed")
         return version_line, None, None
     
     def extract_version_from_filename(self, filename):
@@ -793,27 +918,41 @@ For support, visit: https://community.silabs.com/"""
     def program_device_thread(self):
         """Thread function to program the device"""
         try:
+            self.debug_log("Programming thread started")
+            
             device_display = self.device_var.get()
             device = self.get_actual_device_name(device_display)
             app_file = self.app_file_var.get()
             bootloader_file = self.bootloader_file_var.get()
             
+            self.debug_log(f"Programming parameters:")
+            self.debug_log(f"  Device display: {device_display}")
+            self.debug_log(f"  Device actual: {device}")
+            self.debug_log(f"  App file: {app_file}")
+            self.debug_log(f"  Bootloader file: {bootloader_file}")
+            
             # Validate inputs
             if not device_display:
                 self.log("ERROR: Please select a device")
+                self.debug_log("Validation failed: No device selected")
                 return
             
             if not app_file:
                 self.log("ERROR: Please select an application file")
+                self.debug_log("Validation failed: No application file selected")
                 return
             
             if not os.path.exists(app_file):
                 self.log(f"ERROR: Application file not found: {app_file}")
+                self.debug_log(f"Validation failed: Application file does not exist: {app_file}")
                 return
             
             if bootloader_file and not os.path.exists(bootloader_file):
                 self.log(f"ERROR: Bootloader file not found: {bootloader_file}")
+                self.debug_log(f"Validation failed: Bootloader file does not exist: {bootloader_file}")
                 return
+            
+            self.debug_log("Input validation passed")
             
             self.log("\n" + "="*60)
             self.log("Starting device programming...")
@@ -822,37 +961,50 @@ For support, visit: https://community.silabs.com/"""
             
             # Program bootloader if provided
             if bootloader_file:
+                self.debug_log("Programming bootloader sequence initiated")
                 self.log("\n=== Programming Bootloader ===")
                 boot_cmd = [
                     "commander", "flash",
                     bootloader_file,
                     "--device", device
                 ]
+                
+                self.debug_log(f"Bootloader command: {boot_cmd}")
                 success, stdout, stderr = self.run_commander_command(boot_cmd)
                 
                 if not success:
                     self.log("ERROR: Failed to program bootloader")
                     self.log("Aborting programming sequence")
+                    self.debug_log("Bootloader programming failed, aborting")
                     return
                 
                 self.log("Bootloader programmed successfully!")
+                self.debug_log("Bootloader programming completed successfully")
+            else:
+                self.debug_log("No bootloader file provided, skipping bootloader programming")
             
             # Program application
+            self.debug_log("Programming application sequence initiated")
             self.log("\n=== Programming Application ===")
             app_cmd = [
                 "commander", "flash",
                 app_file,
                 "--device", device
             ]
+            
+            self.debug_log(f"Application command: {app_cmd}")
             success, stdout, stderr = self.run_commander_command(app_cmd)
             
             if not success:
                 self.log("ERROR: Failed to program application")
+                self.debug_log("Application programming failed")
                 return
             
             self.log("Application programmed successfully!")
+            self.debug_log("Application programming completed successfully")
             
             # Verify application version
+            self.debug_log("Starting application version verification")
             self.verify_app_version(device_display, app_file)
             
             self.log("\n" + "="*60)
@@ -861,10 +1013,12 @@ For support, visit: https://community.silabs.com/"""
             
         except Exception as e:
             self.log(f"ERROR: Unexpected error: {str(e)}")
+            self.debug_log(f"Programming thread exception: {type(e).__name__}: {str(e)}")
             messagebox.showerror("Error", f"Programming failed: {str(e)}")
         finally:
             # Re-enable the program button
             self.program_button.config(state="normal")
+            self.debug_log("Program button re-enabled")
     
     def program_device(self):
         """Start programming the device in a separate thread"""
