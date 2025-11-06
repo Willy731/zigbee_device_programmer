@@ -1206,13 +1206,11 @@ For support, visit: https://community.silabs.com/"""
             
             self.debug_log("Input validation passed")
             
-            self.log("\n" + "="*60)
-            self.log("Starting device programming...")
-            self.log(f"Device: {device_display} ({device})")
+            tempString = ""
             if erase_before_flash:
-                self.log("Erase before flash: ENABLED")
-            self.log("="*60)
-            
+                tempString = "Erase before flash: ENABLED\n"
+
+            self.log("\n" + "="*60 + "\nStarting device programming..." + f"Device: {device_display} ({device})\n {tempString}" + "="*60)
             # Mass erase if requested
             if erase_before_flash:
                 self.debug_log("Mass erase sequence initiated")
@@ -1272,11 +1270,9 @@ For support, visit: https://community.silabs.com/"""
             
             if not success:
                 self.log("ERROR: Failed to program application")
-                self.debug_log("Application programming failed")
                 return
             
             self.log("Application programmed successfully!")
-            self.debug_log("Application programming completed successfully")
             
             # Verify application version using file operations manager
             self.debug_log("Starting application version verification")
@@ -1284,15 +1280,13 @@ For support, visit: https://community.silabs.com/"""
                 device_display, app_file, self.device_manager
             )
             if verification_result['compatible']:
-                self.log(f"Version verification: {verification_result['message']}")
+                self.log("\n" + "="*60 + f"\n  Version verification: {verification_result['message']}; Expected: {verification_result['version_info']['version']}\n"+"="*60 + "\n")
             else:
-                self.log(f"Version verification warning: {verification_result['message']}")
+                self.log(f"Version verification warning: {verification_result['message']}; Expected: {verification_result['version_info']['version']}")
             for warning in verification_result.get('warnings', []):
                 self.log(f"WARNING: {warning}")
             
-            self.log("\n" + "="*60)
-            self.log("Programming completed successfully!")
-            self.log("="*60 + "\n")
+            self.log("\n" + "="*60 + "\n   Programming completed successfully!\n"+"="*60 + "\n")
             
         except Exception as e:
             self.log(f"ERROR: Unexpected error: {str(e)}")
