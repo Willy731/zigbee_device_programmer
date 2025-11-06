@@ -84,17 +84,6 @@ class ZigbeeProgrammerGUI:
         
     
     
-    def refresh_device_dropdown(self):
-        """Refresh the device dropdown with current mapping"""
-        if hasattr(self, 'device_combo'):
-            # Update the combobox values
-            self.device_combo.config(values=self.device_display_names)
-            # Select first device if available
-            if self.device_display_names:
-                self.device_combo.current(0)
-            else:
-                self.device_var.set("")
-    
     def check_commander_available(self):
         """Check if commander is available and show helpful error if not"""
         if not self.commander_manager.validate_commander_path():
@@ -913,6 +902,7 @@ For support, visit: https://community.silabs.com/"""
             # Update the UI with new device list
             self.device_display_names = self.device_manager.get_device_display_names()
             self.refresh_device_dropdown()
+            self.update_program_button_state()  # Ensure button state is updated with new device selection
             self.log(message)
         elif message:
             self.debug_log(message)
@@ -1403,9 +1393,13 @@ Built with Python and tkinter"""
     def refresh_device_dropdown(self):
         """Refresh the device dropdown with current mapping"""
         device_names = self.device_manager.get_device_display_names()
-        self.device_combo['values'] = device_names
-        if device_names and not self.device_var.get():
-            self.device_var.set(device_names[0])
+        if hasattr(self, 'device_combo'):
+            self.device_combo['values'] = device_names
+            if device_names:
+                self.device_combo.current(0)  # Select first device
+                self.device_var.set(device_names[0])  # Ensure StringVar is also updated
+            else:
+                self.device_var.set("")
     
     @property
     def device_display_names(self):
