@@ -36,7 +36,22 @@ The dropdown shows friendly names while the actual chip names are used internall
    - On Fedora: `sudo dnf install python3-tkinter`
    - On macOS/Windows: tkinter is usually included with Python
 
-## Installation
+## Easy Installation (No Python Required)
+
+**For users without Python installed**: Simply double-click `install_python_runner.bat`
+
+This automated installer will:
+- ✅ Check if Python is already installed
+- ✅ Download and install Python 3.12 automatically
+- ✅ Install all required packages
+- ✅ Set up the complete environment
+- ✅ No administrator privileges required
+
+See [PYTHON_INSTALLATION_GUIDE.md](PYTHON_INSTALLATION_GUIDE.md) for detailed instructions and troubleshooting.
+
+## Manual Installation
+
+### For Users With Python Already Installed
 
 1. Clone the repository:
 ```bash
@@ -44,7 +59,23 @@ git clone https://github.com/Willy731/zigbee_device_programmer.git
 cd zigbee_device_programmer
 ```
 
-2. No additional Python packages are required (uses only standard library)
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+### For Users Without Python
+
+**Option 1: Automated Installation (Recommended)**
+- Double-click `install_python_runner.bat`
+- Follow the on-screen instructions
+- Python and all dependencies will be installed automatically
+
+**Option 2: Manual Python Installation**
+1. Download Python 3.12+ from [python.org](https://www.python.org/downloads/)
+2. Install Python (make sure to check "Add to PATH")
+3. Clone this repository
+4. Run: `pip install -r requirements.txt`
 
 ## Usage
 
