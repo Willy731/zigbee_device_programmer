@@ -37,18 +37,25 @@ class DeviceMappingManager:
                 with open(self.settings_file, 'r') as f:
                     settings = json.load(f)
                     self.custom_mapping_path = settings.get('custom_mapping_path', None)
-                    self.debug_log(f"Settings loaded: custom_mapping_path = {self.custom_mapping_path}")
+                    # Initialize directory settings if not present
+                    if not hasattr(self, 'directory_settings'):
+                        self.directory_settings = {}
+                    self.directory_settings = settings.get('directory_settings', {})
+                    self.debug_log(f"Settings loaded: custom_mapping_path = {self.custom_mapping_path}, directories = {self.directory_settings}")
             else:
                 self.debug_log("No settings file found, using defaults")
+                self.directory_settings = {}
         except Exception as e:
             self.debug_log(f"Error loading settings: {e}")
             self.custom_mapping_path = None
+            self.directory_settings = {}
     
     def save_settings(self):
         """Save application settings to JSON file"""
         try:
             settings = {
-                'custom_mapping_path': self.custom_mapping_path
+                'custom_mapping_path': self.custom_mapping_path,
+                'directory_settings': getattr(self, 'directory_settings', {})
             }
             with open(self.settings_file, 'w') as f:
                 json.dump(settings, f, indent=2)
@@ -171,3 +178,20 @@ class DeviceMappingManager:
     def get_device_mapping(self):
         """Return the current device mapping dictionary"""
         return self.device_mapping.copy()
+    
+    def load_directory_settings(self):
+        """Load directory settings from the settings file"""
+        if not hasattr(self, 'directory_settings'):
+            self.load_settings()  # This will initialize directory_settings
+        return self.directory_settings.copy()
+    
+    def save_directory_settings(self, directory_settings):
+        """Save directory settings to the settings file"""
+        if not hasattr(self, 'directory_settings'):
+            self.directory_settings = {}
+        
+        # Update the directory settings
+        self.directory_settings.update(directory_settings)
+        
+        # Save all settings to file
+        self.save_settings()

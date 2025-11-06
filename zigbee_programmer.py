@@ -61,7 +61,7 @@ class ZigbeeProgrammerGUI:
         self.device_manager = DeviceMappingManager(debug_callback=self.debug_log)
         self.commander_manager = CommanderManager(debug_callback=self.debug_log, status_callback=self.update_status)
         self.version_parser = VersionParser(debug_callback=self.debug_log)
-        self.file_operations = FileOperationsManager(debug_callback=self.debug_log, version_parser=self.version_parser)
+        self.file_operations = FileOperationsManager(debug_callback=self.debug_log, version_parser=self.version_parser, settings_manager=self.device_manager)
         
         # Initialize custom mapping path after device manager is created
         self.custom_mapping_path = None

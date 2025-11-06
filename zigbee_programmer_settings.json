@@ -1,3 +1,7 @@
 {
-  "custom_mapping_path": "S:/Workspaces/device_mapping.json"
+  "custom_mapping_path": "S:/Workspaces/device_mapping.json",
+  "directory_settings": {
+    "last_app_directory": "C:/workspaces/Final_Builds",
+    "last_bootloader_directory": null
+  }
 }

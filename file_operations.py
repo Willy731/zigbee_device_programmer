@@ -12,14 +12,19 @@ from tkinter import filedialog, messagebox
 class FileOperationsManager:
     """Manages file operations including selection, validation, and path handling"""
     
-    def __init__(self, debug_callback=None, version_parser=None):
+    def __init__(self, debug_callback=None, version_parser=None, settings_manager=None):
         self.debug_log = debug_callback or (lambda msg: None)
         self.version_parser = version_parser
+        self.settings_manager = settings_manager
+        
         self._last_app_directory = None
         self._last_bootloader_directory = None
         
         # Remember last selected directories for better UX
         self._remember_directories = True
+        
+        # Load saved directories from settings if available
+        self._load_directory_settings()
     
     def browse_application_file(self, current_path_var):
         """Browse and select application firmware file (GBL, S37, or HEX)
@@ -55,7 +60,10 @@ class FileOperationsManager:
                 
                 # Remember directory for next time
                 if self._remember_directories:
-                    self._last_app_directory = os.path.dirname(filename)
+                    new_directory = os.path.dirname(filename)
+                    if new_directory != self._last_app_directory:
+                        self._last_app_directory = new_directory
+                        self._save_directory_settings()
                 
                 # Validate the selected file
                 validation_result = self._validate_firmware_file(filename, "application")
@@ -116,7 +124,10 @@ class FileOperationsManager:
                 
                 # Remember directory for next time
                 if self._remember_directories:
-                    self._last_bootloader_directory = os.path.dirname(filename)
+                    new_directory = os.path.dirname(filename)
+                    if new_directory != self._last_bootloader_directory:
+                        self._last_bootloader_directory = new_directory
+                        self._save_directory_settings()
                 
                 # Validate the selected file
                 validation_result = self._validate_firmware_file(filename, "bootloader")
@@ -382,3 +393,32 @@ class FileOperationsManager:
                 return False, f"Invalid bootloader file: {bootloader_validation['error']}"
         
         return True, None
+    
+    def _load_directory_settings(self):
+        """Load last used directories from settings manager"""
+        if not self.settings_manager:
+            return
+        
+        try:
+            settings = self.settings_manager.load_directory_settings()
+            self._last_app_directory = settings.get('last_app_directory')
+            self._last_bootloader_directory = settings.get('last_bootloader_directory')
+            
+            self.debug_log(f"Loaded directory settings - App: {self._last_app_directory}, Bootloader: {self._last_bootloader_directory}")
+        except Exception as e:
+            self.debug_log(f"Error loading directory settings: {e}")
+    
+    def _save_directory_settings(self):
+        """Save current directories to settings manager"""
+        if not self.settings_manager:
+            return
+        
+        try:
+            settings = {
+                'last_app_directory': self._last_app_directory,
+                'last_bootloader_directory': self._last_bootloader_directory
+            }
+            self.settings_manager.save_directory_settings(settings)
+            self.debug_log(f"Saved directory settings - App: {self._last_app_directory}, Bootloader: {self._last_bootloader_directory}")
+        except Exception as e:
+            self.debug_log(f"Error saving directory settings: {e}")
