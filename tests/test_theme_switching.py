@@ -7,8 +7,8 @@ import tkinter as tk
 import sys
 import os
 
-# Add the current directory to Python path to import our module
-sys.path.insert(0, os.path.dirname(__file__))
+# Add the parent directory to Python path to import our module
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from zigbee_programmer import ZigbeeProgrammerGUI
 

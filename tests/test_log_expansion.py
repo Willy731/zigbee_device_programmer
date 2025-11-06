@@ -8,8 +8,8 @@ import sys
 import os
 import time
 
-# Add the current directory to Python path
-sys.path.insert(0, os.path.dirname(__file__))
+# Add the parent directory to Python path
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from zigbee_programmer import ZigbeeProgrammerGUI
 
@@ -47,12 +47,16 @@ def test_log_expansion():
     def show_geometry():
         geometry = root.geometry()
         app.log(f"Current window geometry: {geometry}")
-        root.after(5000, show_geometry)  # Update every 5 seconds
     
     root.after(1000, show_geometry)
     
+    # Auto-close after testing
+    root.after(5000, root.quit)  # Close after 5 seconds
+    
     # Start the GUI
     root.mainloop()
+    
+    print("[OK] Log expansion test completed successfully!")
 
 if __name__ == "__main__":
     test_log_expansion()

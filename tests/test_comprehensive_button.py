@@ -53,7 +53,7 @@ def test_complete_workflow():
         print(f"   - Label color: {app.bootloader_optional_label.cget('foreground')}")
         assert str(app.program_button.cget('state')) == 'disabled'
         assert app.bootloader_optional_label.cget('text') == "(Required for Erase)"
-        assert str(app.bootloader_optional_label.cget('foreground')) == "red"
+        assert str(app.bootloader_optional_label.cget('foreground')) == "#f44336"
         
         # Step 4: User selects bootloader file
         print("\n4. User selects bootloader file:")
@@ -71,7 +71,7 @@ def test_complete_workflow():
         print(f"   - Label color: {app.bootloader_optional_label.cget('foreground')}")
         assert str(app.program_button.cget('state')) == 'normal'
         assert app.bootloader_optional_label.cget('text') == "(Optional)"
-        assert str(app.bootloader_optional_label.cget('foreground')) == "black"
+        assert str(app.bootloader_optional_label.cget('foreground')) == "#b0b0b0"
         
         # Step 6: User removes bootloader file (should still work since erase is off)
         print("\n6. User removes bootloader file (erase still off):")

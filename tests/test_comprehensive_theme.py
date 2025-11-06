@@ -7,8 +7,8 @@ import tkinter as tk
 import sys
 import os
 
-# Add the current directory to Python path
-sys.path.insert(0, os.path.dirname(__file__))
+# Add the parent directory to Python path
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from zigbee_programmer import ZigbeeProgrammerGUI, ModernTheme
 
@@ -35,7 +35,7 @@ def test_theme_switching():
         assert colors['bg'] == ModernTheme.DARK_BG, "Dark background should match"
         assert colors['card_bg'] == ModernTheme.CARD_BG, "Dark card background should match"
         assert colors['text_primary'] == ModernTheme.TEXT_PRIMARY, "Dark text should match"
-        print(f"   ✓ Dark theme colors verified")
+        print(f"   [OK] Dark theme colors verified")
         
         # Toggle to light theme
         print(f"\n2. Switching to Light Theme:")
@@ -54,7 +54,7 @@ def test_theme_switching():
         assert colors['bg'] == ModernTheme.LIGHT_BG, "Light background should match"
         assert colors['card_bg'] == ModernTheme.LIGHT_CARD_BG, "Light card background should match"
         assert colors['text_primary'] == ModernTheme.LIGHT_TEXT_PRIMARY, "Light text should match"
-        print(f"   ✓ Light theme colors verified")
+        print(f"   [OK] Light theme colors verified")
         
         # Toggle back to dark theme
         print(f"\n3. Switching back to Dark Theme:")
@@ -70,19 +70,19 @@ def test_theme_switching():
         assert colors['bg'] == ModernTheme.DARK_BG, "Dark background should match"
         assert colors['card_bg'] == ModernTheme.CARD_BG, "Dark card background should match"
         assert colors['text_primary'] == ModernTheme.TEXT_PRIMARY, "Dark text should match"
-        print(f"   ✓ Dark theme colors verified again")
+        print(f"   [OK] Dark theme colors verified again")
         
         print(f"\n=== Theme Switching Test PASSED ===")
-        print(f"✓ All color schemes working correctly")
-        print(f"✓ Dynamic theme switching implemented successfully")
-        print(f"✓ No more hardcoded theme colors in UI components")
+        print(f"[OK] All color schemes working correctly")
+        print(f"[OK] Dynamic theme switching implemented successfully")
+        print(f"[OK] No more hardcoded theme colors in UI components")
         
         # Close after a short delay
         root.after(500, root.quit)
         root.mainloop()
         
     except Exception as e:
-        print(f"✗ Test FAILED: {e}")
+        print(f"[FAIL] Test FAILED: {e}")
         import traceback
         traceback.print_exc()
 
