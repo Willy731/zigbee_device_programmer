@@ -79,10 +79,38 @@ pip install -r requirements.txt
 
 ## Usage
 
+### Quick Launch (Double-Click)
+
+**For easy access**: Simply double-click one of these files:
+- **`ZigbeeDeviceProgrammer.vbs`** - Silent launch (recommended for shortcuts)
+- **`ZigbeeDeviceProgrammer.bat`** - Launch with console output
+
+### Command Line Launch
+
 1. Run the application:
 ```bash
 python3 zigbee_programmer.py
 ```
+
+### Desktop Shortcut
+
+Create a desktop shortcut for easy access:
+```powershell
+.\create_desktop_shortcut.ps1 -LauncherType vbs
+```
+
+### Creating Executables
+
+For professional distribution, create standalone executables:
+```powershell
+# Simple executable (requires Python on target system)
+.\create_launcher_executable.ps1
+
+# Standalone executable (includes Python runtime)
+.\create_pyinstaller_executable.ps1
+```
+
+See [LAUNCHER_GUIDE.md](LAUNCHER_GUIDE.md) for complete launcher documentation.
 
 2. In the GUI:
    - Select your device from the dropdown menu
