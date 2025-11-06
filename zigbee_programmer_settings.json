@@ -1,7 +1,7 @@
 {
-  "custom_mapping_path": "S:/Workspaces/device_mapping.json",
+  "custom_mapping_path": "C:\\Users\\William\\AppData\\Local\\Temp\\tmpiu5c_4yw.json",
   "directory_settings": {
-    "last_app_directory": "C:/workspaces/Final_Builds",
-    "last_bootloader_directory": null
+    "last_app_directory": "C:\\FirmwareFiles\\Applications",
+    "last_bootloader_directory": "C:\\FirmwareFiles\\Bootloaders"
   }
 }

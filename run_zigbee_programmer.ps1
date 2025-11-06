@@ -46,7 +46,7 @@ function Test-RequiredPackages {
     
     try {
         # Check tkinter (GUI library)
-        python -c "import tkinter; print('✓ GUI library available')" 2>$null
+        python -c "import tkinter; print('O GUI library available')" 2>$null
         if ($LASTEXITCODE -ne 0) {
             Write-ColorOutput "Installing GUI library..." "Yellow"
             python -m pip install -r requirements.txt
@@ -55,10 +55,10 @@ function Test-RequiredPackages {
             }
         }
         
-        Write-ColorOutput "✓ All required packages available" "Green"
+        Write-ColorOutput "O All required packages available" "Green"
         return $true
     } catch {
-        Write-ColorOutput "✗ Package installation failed: $($_.Exception.Message)" "Red"
+        Write-ColorOutput "X Package installation failed: $($_.Exception.Message)" "Red"
         Write-ColorOutput "Try running: python -m pip install -r requirements.txt" "Yellow"
         return $false
     }
@@ -68,7 +68,7 @@ function Test-RequiredPackages {
 function Start-ZigbeeProgram {
     try {
         Write-ColorOutput ""
-        Write-ColorOutput "🚀 Starting Zigbee Device Programmer..." "Cyan"
+        Write-ColorOutput " Starting Zigbee Device Programmer..." "Cyan"
         Write-ColorOutput ""
         
         if ($Debug) {
@@ -83,10 +83,10 @@ function Start-ZigbeeProgram {
         
         if ($exitCode -eq 0) {
             Write-ColorOutput ""
-            Write-ColorOutput "✓ Application closed successfully" "Green"
+            Write-ColorOutput " Application closed successfully" "Green"
         } else {
             Write-ColorOutput ""
-            Write-ColorOutput "⚠ Application exited with code: $exitCode" "Yellow"
+            Write-ColorOutput " Application exited with code: $exitCode" "Yellow"
             Write-ColorOutput ""
             Write-ColorOutput "Troubleshooting tips:" "Cyan"
             Write-ColorOutput "• Check that Simplicity Commander is installed" "White"
@@ -98,7 +98,7 @@ function Start-ZigbeeProgram {
         return $exitCode
     } catch {
         Write-ColorOutput ""
-        Write-ColorOutput "✗ Failed to start application: $($_.Exception.Message)" "Red"
+        Write-ColorOutput "X Failed to start application: $($_.Exception.Message)" "Red"
         return 1
     }
 }
@@ -126,7 +126,7 @@ function Main {
     
     # Check if zigbee_programmer.py exists
     if (-not (Test-Path "zigbee_programmer.py")) {
-        Write-ColorOutput "✗ zigbee_programmer.py not found!" "Red"
+        Write-ColorOutput "X zigbee_programmer.py not found!" "Red"
         Write-ColorOutput "Please ensure you're running this from the correct directory." "Yellow"
         Write-ColorOutput "Expected: $(Join-Path (Get-Location) 'zigbee_programmer.py')" "Gray"
         Write-ColorOutput ""

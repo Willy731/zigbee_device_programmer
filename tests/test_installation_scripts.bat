@@ -5,6 +5,9 @@
 echo Testing Python installation scripts...
 echo.
 
+:: Change to parent directory to find files
+cd /d "%~dp0.."
+
 :: Test batch script syntax
 echo Testing install_python.bat syntax...
 call :test_batch_syntax install_python.bat

@@ -14,6 +14,9 @@ echo.
 set SUCCESS_COUNT=0
 set TOTAL_COUNT=0
 
+:: Change to parent directory to find files
+cd /d "%~dp0.."
+
 :: Test 1: Check if main application file exists
 set /a TOTAL_COUNT+=1
 if exist "zigbee_programmer.py" (
@@ -141,19 +144,19 @@ echo.
 
 python --version >nul 2>&1
 if %errorlevel% equ 0 (
-    for /f "tokens=*" %%i in ('python --version 2^>^&1') do echo ✓ Python: %%i
+    for /f "tokens=*" %%i in ('python --version 2^>^&1') do echo O Python: %%i
     echo   → Launchers will work immediately
 ) else (
-    echo ⚠ Python: Not installed or not in PATH
+    echo X Python: Not installed or not in PATH
     echo   → Users will need to run install_python_runner.bat first
 )
 
 :: Check if tkinter is available
 python -c "import tkinter" >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✓ GUI Library: tkinter available
+    echo O GUI Library: tkinter available
 ) else (
-    echo ⚠ GUI Library: tkinter may need installation
+    echo X GUI Library: tkinter may need installation
 )
 
 echo.

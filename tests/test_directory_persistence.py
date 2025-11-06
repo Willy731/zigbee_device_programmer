@@ -9,6 +9,10 @@ import tempfile
 import tkinter as tk
 from tkinter import StringVar
 import pytest
+import sys
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import the modules to test
 from device_manager import DeviceMappingManager
@@ -283,10 +287,10 @@ if __name__ == "__main__":
         test_class.setup_method()
         try:
             test_method()
-            print(f"✓ Test {i}/{total}: {test_method.__name__}")
+            print(f"[OK] Test {i}/{total}: {test_method.__name__}")
             passed += 1
         except Exception as e:
-            print(f"✗ Test {i}/{total}: {test_method.__name__} - {e}")
+            print(f"[FAIL] Test {i}/{total}: {test_method.__name__} - {e}")
         finally:
             test_class.teardown_method()
     
@@ -294,7 +298,7 @@ if __name__ == "__main__":
     print(f"Results: {passed}/{total} tests passed")
     
     if passed == total:
-        print("🎉 All directory persistence tests passed!")
+        print("[SUCCESS] All directory persistence tests passed!")
     else:
-        print("❌ Some tests failed!")
+        print("[FAIL] Some tests failed!")
         exit(1)

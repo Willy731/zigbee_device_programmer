@@ -48,7 +48,7 @@ if not exist "zigbee_programmer.py" (
 
 :: Check if required packages are installed
 echo Checking required packages...
-python -c "import tkinter; print('✓ GUI library (tkinter) available')" 2>nul
+python -c "import tkinter; print('O GUI library (tkinter) available')" 2>nul
 if %errorlevel% neq 0 (
     echo WARNING: GUI library (tkinter) not available!
     echo Installing required packages...

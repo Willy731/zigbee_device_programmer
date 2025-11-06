@@ -10,6 +10,10 @@ import tkinter as tk
 from tkinter import StringVar
 
 # Import our modules
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from device_manager import DeviceMappingManager
 from file_operations import FileOperationsManager
 
@@ -22,7 +26,9 @@ def demo_directory_persistence():
     # Show initial settings
     print("\n1. Initial Settings File Content:")
     try:
-        with open("zigbee_programmer_settings.json", 'r') as f:
+        # Use parent directory for settings file
+        settings_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "zigbee_programmer_settings.json")
+        with open(settings_path, 'r') as f:
             settings = json.load(f)
         print(json.dumps(settings, indent=2))
     except FileNotFoundError:
@@ -100,7 +106,8 @@ def demo_directory_persistence():
     
     # Show updated settings file
     print("\n6. Updated Settings File Content:")
-    with open("zigbee_programmer_settings.json", 'r') as f:
+    settings_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "zigbee_programmer_settings.json")
+    with open(settings_path, 'r') as f:
         updated_settings = json.load(f)
     print(json.dumps(updated_settings, indent=2))
     
