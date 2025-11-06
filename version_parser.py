@@ -22,6 +22,7 @@ class VersionParser:
         - xxx_version_1.2.3_xxx.gbl
         - xxx_1.2.3_xxx.gbl
         - xxx-v1.2.3-xxx.gbl
+        - xxx_1-2-3.gbl (dash format)
         """
         if not filename:
             return None
@@ -35,12 +36,17 @@ class VersionParser:
             r'version[_\-](\d+\.\d+\.\d+)',   # version_1.2.3
             r'(\d+\.\d+\.\d+)',               # 1.2.3 (standalone)
             r'(\d+\.\d+)',                    # 1.2 (standalone)
+            r'(\d+\-\d+\-\d+)',               # 1-2-3 (dash format)
+            r'(\d+\-\d+)',                    # 1-2 (dash format)
         ]
         
         for pattern in patterns:
             match = re.search(pattern, base_name, re.IGNORECASE)
             if match:
                 version = match.group(1)
+                # Convert dash format to dot format
+                if '-' in version:
+                    version = version.replace('-', '.')
                 self.debug_log(f"Parsed version '{version}' from filename: {base_name}")
                 return version
         
@@ -221,3 +227,28 @@ class VersionParser:
         display_parts.append(f"Size: {info['size_mb']} MB")
         
         return " | ".join(display_parts)
+    
+    def extract_version_from_filename(self, filename):
+        """Alias for parse_version_from_filename that returns tuple for backward compatibility"""
+        version_string = self.parse_version_from_filename(filename)
+        if version_string:
+            decimal_value = self._version_string_to_decimal(version_string)
+            return (version_string, decimal_value)
+        return (None, None)
+    
+    def _version_string_to_decimal(self, version_string):
+        """Convert version string like '2.1.7' to decimal equivalent like 0x02010007"""
+        try:
+            parts = version_string.split('.')
+            if len(parts) >= 2:
+                major = int(parts[0])
+                minor = int(parts[1])
+                patch = int(parts[2]) if len(parts) > 2 else 0
+                
+                # Pack into hex format: major.minor.0.patch -> 0xMMmmppPP
+                decimal_value = (major << 24) | (minor << 16) | (patch)
+                self.debug_log(f"Version {version_string} -> decimal {decimal_value} (0x{decimal_value:08x})")
+                return decimal_value
+        except (ValueError, IndexError) as e:
+            self.debug_log(f"Error converting version {version_string} to decimal: {e}")
+        return None

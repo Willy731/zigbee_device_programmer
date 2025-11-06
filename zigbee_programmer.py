@@ -53,8 +53,6 @@ class ZigbeeProgrammerGUI:
         self.app_file_var = tk.StringVar()
         self.bootloader_file_var = tk.StringVar()
         self.erase_before_flash = tk.BooleanVar()
-        self.commander_path = None
-        self.custom_mapping_path = None
         
         # Debug mode for verbose logging (must be set before loading device mapping)
         self.debug_mode = False
@@ -65,182 +63,26 @@ class ZigbeeProgrammerGUI:
         self.version_parser = VersionParser(debug_callback=self.debug_log)
         self.file_operations = FileOperationsManager(debug_callback=self.debug_log, version_parser=self.version_parser)
         
+        # Initialize custom mapping path after device manager is created
+        self.custom_mapping_path = None
+        
         # Settings file for persistent configuration
         self.settings_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "zigbee_programmer_settings.json")
         
-        # Load device mapping from JSON
-        self.load_device_mapping()
+        # Load device mapping from JSON using device manager
+        self.device_manager.load_device_mapping()
         
         # Display names for the dropdown
-        self.device_display_names = list(self.device_mapping.keys())
+        self.device_display_names = self.device_manager.get_device_display_names()
         
-        # Find commander executable on startup
-        self.find_commander()
+        # Find commander executable on startup using commander manager
+        commander_paths = self.commander_manager.find_commander_paths()
+        if commander_paths:
+            self.commander_manager.set_commander_path(commander_paths[0])
         
         self.create_widgets()
         
-    def find_commander(self):
-        """Find the Simplicity Commander executable"""
-        # First check if commander is in PATH
-        commander_exe = "commander.exe" if platform.system() == "Windows" else "commander"
-        
-        if shutil.which(commander_exe):
-            self.commander_path = commander_exe
-            return True
-        
-        # If not in PATH, check common installation locations
-        if platform.system() == "Windows":
-            common_paths = [
-                r"C:\SiliconLabs\SimplicityStudio\v5\developer\adapter_packs\commander\Commander.exe",
-                r"C:\SiliconLabs\SimplicityStudio\v4\developer\adapter_packs\commander\Commander.exe",
-                r"C:\Program Files\Silicon Labs\Simplicity Studio\v5\developer\adapter_packs\commander\Commander.exe",
-                r"C:\Program Files\Silicon Labs\Simplicity Studio\v4\developer\adapter_packs\commander\Commander.exe",
-                r"C:\Program Files (x86)\Silicon Labs\Simplicity Studio\v5\developer\adapter_packs\commander\Commander.exe",
-                r"C:\Program Files (x86)\Silicon Labs\Simplicity Studio\v4\developer\adapter_packs\commander\Commander.exe",
-            ]
-        else:
-            # Linux/macOS paths
-            common_paths = [
-                "/opt/SimplicityStudio_v5/developer/adapter_packs/commander/Commander",
-                "/opt/SimplicityStudio_v4/developer/adapter_packs/commander/Commander",
-                "/Applications/Simplicity Studio.app/Contents/Eclipse/developer/adapter_packs/commander/Commander",
-            ]
-        
-        for path in common_paths:
-            if os.path.exists(path):
-                self.commander_path = path
-                return True
-        
-        return False
     
-    def get_actual_device_name(self, display_name):
-        """Get the actual chip name from the display name
-        
-        Args:
-            display_name: The display name selected by the user
-            
-        Returns:
-            str: The actual chip name for commander, or the display name if not found in mapping
-        """
-        return self.device_mapping.get(display_name, display_name)
-    
-    def load_settings(self):
-        """Load application settings from JSON file"""
-        try:
-            if os.path.exists(self.settings_file):
-                with open(self.settings_file, 'r') as f:
-                    settings = json.load(f)
-                    self.custom_mapping_path = settings.get('custom_mapping_path', None)
-                    self.debug_log(f"Settings loaded: custom_mapping_path = {self.custom_mapping_path}")
-            else:
-                self.debug_log("No settings file found, using defaults")
-        except Exception as e:
-            self.debug_log(f"Error loading settings: {e}")
-            self.custom_mapping_path = None
-    
-    def save_settings(self):
-        """Save application settings to JSON file"""
-        try:
-            settings = {
-                'custom_mapping_path': self.custom_mapping_path
-            }
-            with open(self.settings_file, 'w') as f:
-                json.dump(settings, f, indent=2)
-            self.debug_log(f"Settings saved: {settings}")
-        except Exception as e:
-            self.debug_log(f"Error saving settings: {e}")
-    
-    def load_device_mapping(self):
-        """Load device mapping from JSON file"""
-        # Load settings first to check for custom mapping path
-        self.load_settings()
-        
-        # Default device mapping as fallback
-        default_mapping = {
-            "MGM220PC22HNA": "MGM220PC22HNA",
-            "MGM210PA22JIA": "MGM210PA22JIA",
-            "MGM13P02F512GA": "MGM13P02F512GA",
-        }
-        
-        # Try to load from custom mapping file first
-        if self.custom_mapping_path and os.path.exists(self.custom_mapping_path):
-            try:
-                with open(self.custom_mapping_path, 'r') as f:
-                    self.device_mapping = json.load(f)
-                self.debug_log(f"Device mapping loaded from custom file: {self.custom_mapping_path}")
-                self.debug_log(f"Loaded {len(self.device_mapping)} device mappings")
-                return
-            except Exception as e:
-                self.debug_log(f"Error loading custom device mapping from {self.custom_mapping_path}: {e}")
-                messagebox.showerror("Error", f"Failed to load custom device mapping:\n{e}\n\nFalling back to default mapping.")
-        
-        # Try to load from default mapping file
-        default_mapping_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "device_mapping.json")
-        if os.path.exists(default_mapping_file):
-            try:
-                with open(default_mapping_file, 'r') as f:
-                    self.device_mapping = json.load(f)
-                self.debug_log(f"Device mapping loaded from default file: {default_mapping_file}")
-                self.debug_log(f"Loaded {len(self.device_mapping)} device mappings")
-                return
-            except Exception as e:
-                self.debug_log(f"Error loading default device mapping file: {e}")
-        
-        # Fallback to hardcoded mapping
-        self.device_mapping = default_mapping
-        self.debug_log("Using fallback hardcoded device mapping")
-        self.debug_log(f"Loaded {len(self.device_mapping)} device mappings")
-        
-        # Create default mapping file if it doesn't exist
-        if not os.path.exists(default_mapping_file):
-            try:
-                with open(default_mapping_file, 'w') as f:
-                    json.dump(default_mapping, f, indent=2)
-                self.debug_log(f"Created default device mapping file: {default_mapping_file}")
-            except Exception as e:
-                self.debug_log(f"Error creating default device mapping file: {e}")
-    
-    def select_device_mapping_file(self):
-        """Allow user to select a custom device mapping JSON file"""
-        filename = filedialog.askopenfilename(
-            title="Select Device Mapping JSON File",
-            filetypes=[
-                ("JSON Files", "*.json"),
-                ("All Files", "*.*")
-            ],
-            initialdir=os.path.dirname(os.path.abspath(__file__))
-        )
-        
-        if filename and os.path.exists(filename):
-            try:
-                # Test load the file to make sure it's valid
-                with open(filename, 'r') as f:
-                    test_mapping = json.load(f)
-                
-                # Validate that it's a dictionary
-                if not isinstance(test_mapping, dict):
-                    raise ValueError("Device mapping file must contain a JSON object (dictionary)")
-                
-                # Update the mapping
-                self.custom_mapping_path = filename
-                self.device_mapping = test_mapping
-                
-                # Update the UI
-                self.device_display_names = list(self.device_mapping.keys())
-                self.refresh_device_dropdown()
-                
-                # Save settings
-                self.save_settings()
-                
-                self.log(f"Device mapping loaded from: {filename}")
-                self.debug_log(f"Loaded {len(self.device_mapping)} device mappings from custom file")
-                messagebox.showinfo("Success", f"Device mapping loaded successfully!\n\nLoaded {len(self.device_mapping)} devices from:\n{filename}")
-                
-            except Exception as e:
-                self.log(f"ERROR: Failed to load device mapping from {filename}: {e}")
-                messagebox.showerror("Error", f"Failed to load device mapping file:\n\n{e}")
-        else:
-            self.debug_log("Device mapping file selection cancelled by user")
     
     def refresh_device_dropdown(self):
         """Refresh the device dropdown with current mapping"""
@@ -255,7 +97,7 @@ class ZigbeeProgrammerGUI:
     
     def check_commander_available(self):
         """Check if commander is available and show helpful error if not"""
-        if self.commander_path is None:
+        if not self.commander_manager.validate_commander_path():
             error_msg = (
                 "Simplicity Commander not found!\n\n"
                 "Please ensure Simplicity Commander is installed:\n"
@@ -273,29 +115,19 @@ class ZigbeeProgrammerGUI:
             return False
         
         # Additional check: verify commander executable can run
-        try:
-            test_cmd = [self.commander_path, "--version"]
-            result = subprocess.run(test_cmd, capture_output=True, text=True, timeout=10)
-            if result.returncode != 0:
-                error_msg = (
-                    f"Commander found at {self.commander_path} but failed to execute.\n\n"
-                    "Possible issues:\n"
-                    "1. Insufficient permissions - try running as administrator\n"
-                    "2. Missing dependencies\n"
-                    "3. Corrupted installation\n\n"
-                    "Please reinstall Simplicity Commander or contact support."
-                )
-                messagebox.showerror("Commander Execution Error", error_msg)
-                self.log(f"ERROR: Commander execution failed: {result.stderr}")
-                return False
-        except Exception as e:
+        version_info = self.commander_manager.get_commander_version()
+        if "Error" in version_info:
             error_msg = (
-                f"Commander found at {self.commander_path} but failed to execute.\n\n"
-                f"Error: {str(e)}\n\n"
-                "Try running the application as administrator or reinstall Commander."
+                f"Commander found but failed to execute.\n\n"
+                f"Error: {version_info}\n\n"
+                "Possible issues:\n"
+                "1. Insufficient permissions - try running as administrator\n"
+                "2. Missing dependencies\n"
+                "3. Corrupted installation\n\n"
+                "Please reinstall Simplicity Commander or contact support."
             )
             messagebox.showerror("Commander Execution Error", error_msg)
-            self.log(f"ERROR: Commander execution failed: {str(e)}")
+            self.log(f"ERROR: Commander execution failed: {version_info}")
             return False
         
         return True
@@ -758,7 +590,7 @@ class ZigbeeProgrammerGUI:
         tools_menu.add_command(label="Set Commander Path...", command=self.set_commander_path)
         tools_menu.add_command(label="Test Device Connection", command=self.test_device_connection)
         tools_menu.add_separator()
-        tools_menu.add_command(label="Select Device Mapping File...", command=self.select_device_mapping_file)
+        tools_menu.add_command(label="Select Device Mapping File...", command=self.select_device_mapping_wrapper)
         tools_menu.add_separator()
         tools_menu.add_command(label="Toggle Debug Mode", command=self.toggle_debug_mode)
         tools_menu.add_separator()
@@ -789,7 +621,7 @@ class ZigbeeProgrammerGUI:
             ]
         )
         if filename and os.path.exists(filename):
-            self.commander_path = filename
+            self.commander_manager.set_commander_path(filename)
             self.log(f"Commander path set to: {filename}")
             self.update_status()
             messagebox.showinfo("Success", f"Commander path updated to:\n{filename}")
@@ -797,9 +629,11 @@ class ZigbeeProgrammerGUI:
     def refresh_commander(self):
         """Re-search for commander"""
         self.log("\n=== Searching for Simplicity Commander ===")
-        if self.find_commander():
-            self.log(f"Commander found at: {self.commander_path}")
-            messagebox.showinfo("Success", f"Commander found at:\n{self.commander_path}")
+        commander_paths = self.commander_manager.find_commander_paths()
+        if commander_paths:
+            self.commander_manager.set_commander_path(commander_paths[0])
+            self.log(f"Commander found at: {commander_paths[0]}")
+            messagebox.showinfo("Success", f"Commander found at:\n{commander_paths[0]}")
         else:
             self.log("Commander not found in standard locations")
             messagebox.showwarning("Not Found", "Commander not found in standard locations.\nPlease use 'Tools > Set Commander Path' to set it manually.")
@@ -815,13 +649,13 @@ class ZigbeeProgrammerGUI:
             messagebox.showwarning("No Device Selected", "Please select a device before testing connection.")
             return
         
-        device = self.get_actual_device_name(device_display)
+        device = self.device_manager.get_actual_device_name(device_display)
         
         self.log("\n=== Testing Device Connection ===")
         self.log(f"Testing connection to device: {device_display} ({device})")
         
         # Test with device list command
-        list_cmd = [self.commander_path, "adapter", "list"]
+        list_cmd = ["commander", "adapter", "list"]
         success, stdout, stderr = self.run_commander_command(list_cmd)
         
         if success:
@@ -830,7 +664,7 @@ class ZigbeeProgrammerGUI:
                 self.log("✓ J-Link adapter detected")
                 
                 # Test device-specific connection
-                probe_cmd = [self.commander_path, "adapter", "probe", "--device", device]
+                probe_cmd = ["commander", "adapter", "probe", "--device", device]
                 success2, stdout2, stderr2 = self.run_commander_command(probe_cmd)
                 
                 if success2:
@@ -965,23 +799,18 @@ For support, visit: https://community.silabs.com/"""
     def check_commander_status(self):
         """Check and display commander status"""
         self.log("\n=== Checking Simplicity Commander Status ===")
-        if self.commander_path:
-            self.log(f"Commander found at: {self.commander_path}")
+        if self.commander_manager.validate_commander_path():
+            commander_path = self.commander_manager.commander_path
+            self.log(f"Commander found at: {commander_path}")
             
-            # Test commander by running version command
-            try:
-                version_cmd = [self.commander_path, "--version"]
-                result = subprocess.run(version_cmd, capture_output=True, text=True, timeout=10)
-                if result.returncode == 0:
-                    self.log("Commander is working correctly!")
-                    if result.stdout:
-                        self.log(f"Version info: {result.stdout.strip()}")
-                else:
-                    self.log("Commander found but may not be working correctly")
-                    if result.stderr:
-                        self.log(f"Error: {result.stderr}")
-            except Exception as e:
-                self.log(f"Error testing commander: {e}")
+            # Test commander by getting version
+            version_info = self.commander_manager.get_commander_version()
+            if "Error" not in version_info:
+                self.log("Commander is working correctly!")
+                self.log(f"Version info: {version_info}")
+            else:
+                self.log("Commander found but may not be working correctly")
+                self.log(f"Error: {version_info}")
         else:
             self.log("Commander not found!")
             self.check_commander_available()
@@ -1024,17 +853,14 @@ For support, visit: https://community.silabs.com/"""
             
         status_parts = []
         
-        if self.commander_path:
+        if self.commander_manager.validate_commander_path():
             status_parts.append("Commander available")
         else:
             status_parts.append("Commander NOT FOUND")
         
-        # Add device mapping info
-        if self.custom_mapping_path:
-            mapping_name = os.path.basename(self.custom_mapping_path)
-            status_parts.append(f"Custom mapping: {mapping_name}")
-        else:
-            status_parts.append("Default mapping")
+        # Add device mapping info  
+        mapping_info = self.device_manager.get_mapping_info()
+        status_parts.append(mapping_info)
         
         if platform.system() == "Windows":
             if self.is_admin():
@@ -1048,44 +874,48 @@ For support, visit: https://community.silabs.com/"""
         self.status_var.set(" | ".join(status_parts))
         
     def browse_app_file(self):
-        filename = filedialog.askopenfilename(
-            title="Select Application File",
-            filetypes=[
-                ("Binary Files", "*.bin *.hex *.s37 *.gbl"),
-                ("All Files", "*.*")
-            ]
-        )
-        if filename:
-            self.app_file_var.set(filename)
-            self.log(f"Selected application file: {filename}")
-            self.debug_log(f"Application file selected - path: {filename}")
-            self.debug_log(f"File size: {os.path.getsize(filename) if os.path.exists(filename) else 'File not found'} bytes")
-            self.debug_log(f"File extension: {os.path.splitext(filename)[1]}")
+        success, selected_path, message = self.file_operations.browse_application_file(self.app_file_var)
+        if success:
+            self.log(f"Selected application file: {selected_path}")
+            self.debug_log(f"Application file selected - path: {selected_path}")
         else:
-            self.debug_log("Application file selection cancelled by user")
+            if message and message != "File selection cancelled":
+                self.debug_log(f"Application file selection error: {message}")
+            else:
+                self.debug_log("Application file selection cancelled by user")
         
         # Update program button state
         self.update_program_button_state()
     
     def browse_bootloader_file(self):
-        filename = filedialog.askopenfilename(
-            title="Select Bootloader File",
-            filetypes=[
-                ("Binary Files", "*.bin *.hex *.s37"),
-                ("All Files", "*.*")
-            ]
-        )
-        if filename:
-            self.bootloader_file_var.set(filename)
-            self.log(f"Selected bootloader file: {filename}")
-            self.debug_log(f"Bootloader file selected - path: {filename}")
-            self.debug_log(f"File size: {os.path.getsize(filename) if os.path.exists(filename) else 'File not found'} bytes")
-            self.debug_log(f"File extension: {os.path.splitext(filename)[1]}")
+        success, selected_path, message = self.file_operations.browse_bootloader_file(self.bootloader_file_var)
+        if success:
+            self.log(f"Selected bootloader file: {selected_path}")
+            self.debug_log(f"Bootloader file selected - path: {selected_path}")
         else:
-            self.debug_log("Bootloader file selection cancelled by user")
+            if message and message != "File selection cancelled":
+                self.debug_log(f"Bootloader file selection error: {message}")
+            else:
+                self.debug_log("Bootloader file selection cancelled by user")
         
         # Update program button state
         self.update_program_button_state()
+    
+    def select_device_mapping_wrapper(self):
+        """Wrapper method for device mapping file selection"""
+        success, message = self.device_manager.select_device_mapping_file(
+            lambda: filedialog.askopenfilename(
+                title="Select Device Mapping JSON File",
+                filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+            )
+        )
+        if success:
+            # Update the UI with new device list
+            self.device_display_names = self.device_manager.get_device_display_names()
+            self.refresh_device_dropdown()
+            self.log(message)
+        elif message:
+            self.debug_log(message)
     
     def on_erase_checkbox_changed(self):
         """Handle the erase before flash checkbox state change"""
@@ -1192,13 +1022,14 @@ For support, visit: https://community.silabs.com/"""
         if not self.check_commander_available():
             return False, "", "Commander not available"
         
-        # Replace 'commander' with actual path
+        # Replace 'commander' with actual path from manager
+        commander_path = self.commander_manager.commander_path
         if command[0] == "commander":
-            command[0] = self.commander_path
+            command[0] = commander_path
         
         self.debug_log(f"Command to execute: {command}")
         self.debug_log(f"Working directory: {os.getcwd()}")
-        self.debug_log(f"Commander path: {self.commander_path}")
+        self.debug_log(f"Commander path: {commander_path}")
         
         try:
             self.debug_log(f"Running command: {' '.join(command)}")
@@ -1243,190 +1074,6 @@ For support, visit: https://community.silabs.com/"""
             self.log(f"ERROR: {str(e)}")
             self.debug_log(f"Unexpected exception: {type(e).__name__}: {str(e)}")
             return False, "", str(e)
-    
-    def verify_app_version(self, device_display, app_file=None):
-        """Verify application version using commander readmem and util appinfo
-        
-        Args:
-            device_display: The display device name selected by user
-            app_file: The application filename to extract expected version from
-            
-        Returns:
-            bool: True if verification succeeded, False otherwise
-        """
-        self.log("\n=== Verifying Application Version ===")
-        
-        # Get the actual device name for commander
-        device = self.get_actual_device_name(device_display)
-        self.log(f"Device: {device_display} ({device})")
-        
-        # Extract expected version from filename if provided
-        expected_version = None
-        expected_decimal = None
-        if app_file:
-            self.debug_log(f"Analyzing filename: {app_file}")
-            expected_version, expected_decimal = self.extract_version_from_filename(app_file)
-            if expected_version:
-                self.debug_log(f"Expected version from filename: {expected_version} (decimal: {expected_decimal})")
-            else:
-                self.debug_log(f"Version extraction failed for filename: {app_file}")
-        else:
-            self.debug_log("No app file provided for version comparison")
-        
-        # Create temporary file for device dump
-        with tempfile.NamedTemporaryFile(mode='w+b', suffix='.bin', delete=False) as tmp_file:
-            dump_file = tmp_file.name
-        
-        self.debug_log(f"Created temporary dump file: {dump_file}")
-        
-        try:
-            # Read device memory
-            readmem_cmd = [
-                "commander", "readmem",
-                "--region", "@mainflash",
-                "--outfile", dump_file,
-                "--device", device
-            ]
-            
-            self.debug_log("Starting device memory read operation")
-            success, stdout, stderr = self.run_commander_command(readmem_cmd)
-            
-            if not success:
-                self.log("ERROR: Failed to read device memory")
-                self.debug_log(f"Memory read failed - stdout: {stdout}, stderr: {stderr}")
-                return False
-            
-            self.debug_log("Device memory read completed successfully")
-            
-            # Get application info
-            appinfo_cmd = ["commander", "util", "appinfo", dump_file]
-            self.debug_log("Starting application info extraction")
-            success, stdout, stderr = self.run_commander_command(appinfo_cmd)
-            
-            if success:
-                self.debug_log(f"Application info extraction successful, processing {len(stdout.split())} lines of output")
-                
-                # Parse and highlight app version - only validate the FIRST app version found
-                version_found = False
-                version_matches = False
-                first_version_processed = False
-                device_versions = []  # Store all versions found on device
-                
-                for line_num, line in enumerate(stdout.split('\n'), 1):
-                    if 'App version' in line:
-                        self.debug_log(f"Found app version line {line_num}: {line.strip()}")
-                        version_found = True
-                        original_line, parsed_version, decimal_value = self.parse_app_version(line)
-                        
-                        self.log(f">>> {original_line.strip()} <<<")
-                        
-                        if parsed_version and decimal_value:
-                            self.debug_log(f">>> Parsed Version: {parsed_version} (decimal: {decimal_value}) <<<")
-                            self.debug_log(f"Version parsing successful: {parsed_version}, decimal: {decimal_value}")
-                            device_versions.append((parsed_version, decimal_value))
-                            
-                            # Calculate alternative parse (int math) for comparison
-                            int_version = None
-                            if decimal_value >= 1000000:
-                                int_major = decimal_value // 1000000
-                                int_minor = (decimal_value % 1000000) // 1000
-                                int_patch = decimal_value % 1000
-                                int_version = f"{int_major}.{int_minor}.{int_patch}"
-                                if int_version != parsed_version:
-                                    self.debug_log(f">>> Alternative parse (int math): {int_version} <<<")
-                                    self.debug_log(f"Alternative parsing: {int_version} vs byte parsing: {parsed_version}")
-                            
-                            # Only validate the FIRST app version against the filename
-                            if not first_version_processed and expected_version and expected_decimal:
-                                self.debug_log("Processing first app version for validation")
-                                first_version_processed = True
-                                version_match = False
-                                match_reason = ""
-                                comparison_version = None
-                                
-                                # Use int math version for comparison if available and different from byte parsing
-                                if int_version and int_version != parsed_version:
-                                    comparison_version = int_version
-                                    match_type = "int math"
-                                    self.debug_log(f"Using int math version for comparison: {int_version}")
-                                else:
-                                    comparison_version = parsed_version  
-                                    match_type = "byte parsing"
-                                    self.debug_log(f"Using byte parsing version for comparison: {parsed_version}")
-                                
-                                # Compare using string comparison
-                                if comparison_version == expected_version:
-                                    version_match = True
-                                    match_reason = f"string match ({match_type})"
-                                # Handle case where device has extra .0 (e.g., "10.20.30.0" vs "10.20.30")
-                                elif comparison_version.endswith('.0') and comparison_version[:-2] == expected_version:
-                                    version_match = True
-                                    match_reason = f"string match (ignoring trailing .0, {match_type})"
-                                # Handle case where expected has extra .0
-                                elif expected_version.endswith('.0') and expected_version[:-2] == comparison_version:
-                                    version_match = True
-                                    match_reason = f"string match (ignoring expected trailing .0, {match_type})"
-                                
-                                self.debug_log(f"Version comparison: {comparison_version} vs {expected_version} = {version_match}")
-                                
-                                if version_match:
-                                    self.log(f">>> ✓ VERSION MATCH: Device version {comparison_version} matches filename version {expected_version} <<<")
-                                    self.debug_log(f"Version match confirmed: {comparison_version} == {expected_version} ({match_reason})")
-                                    version_matches = True
-                                    break
-                                else:
-                                    self.log(f">>> ✗ VERSION MISMATCH: Expected {expected_version} but device has {comparison_version} ({match_type}) <<<")
-                            elif first_version_processed:
-                                self.debug_log(f"Secondary app version found (not validated): {parsed_version}")
-                                # Show alternative parsing for secondary versions but don't validate
-                                if decimal_value >= 1000000:
-                                    int_major = decimal_value // 1000000
-                                    int_minor = (decimal_value % 1000000) // 1000
-                                    int_patch = decimal_value % 1000
-                                    int_version_secondary = f"{int_major}.{int_minor}.{int_patch}"
-                                    if int_version_secondary != parsed_version:
-                                        self.log(f">>> Alternative parse (int math): {int_version_secondary} <<<")
-                                self.log(">>> (Secondary app version - not validated) <<<")
-                        else:
-                            self.log(">>> Could not parse version number <<<")
-                            self.debug_log(f"Version parsing failed for line: {line.strip()}")
-                            if not first_version_processed and expected_version:
-                                first_version_processed = True
-                                self.log(f">>> ✗ VERSION MISMATCH: Could not parse device version, expected {expected_version} <<<")
-                
-                self.debug_log(f"Version processing complete. Found {len(device_versions)} versions on device")
-                
-                # Summary of version verification (only for the first version)
-                if version_found:
-                    if expected_version:
-                        if version_matches:
-                            self.log(">>> ✓ VERSION VERIFICATION PASSED: Device version matches filename! <<<")
-                            self.debug_log("Version verification PASSED")
-                        else:
-                            self.log(">>> ✗ VERSION VERIFICATION FAILED: Device version does not match filename! <<<")
-                            self.debug_log("Version verification FAILED")
-                            return False  # Return false on version mismatch
-                    else:
-                        self.log("Application version verified successfully!")
-                        self.debug_log("Version verification completed (no filename comparison)")
-                    return True
-                else:
-                    self.log("No application version found in output")
-                    self.debug_log("No app version found in commander output")
-                    return False
-            else:
-                self.log("ERROR: Failed to get application info")
-                self.debug_log(f"Application info failed - stdout: {stdout}, stderr: {stderr}")
-                return False
-        finally:
-            # Clean up temporary file
-            try:
-                if os.path.exists(dump_file):
-                    os.remove(dump_file)
-                    self.debug_log(f"Temporary file removed: {dump_file}")
-            except (OSError, PermissionError) as e:
-                self.log(f"Warning: Could not remove temporary file {dump_file}: {e}")
-                self.debug_log(f"Failed to remove temporary file: {e}")
     
     def parse_app_version(self, version_line):
         """Parse application version from hex to decimal and format as version string
@@ -1512,58 +1159,13 @@ For support, visit: https://community.silabs.com/"""
         self.debug_log("Version parsing failed")
         return version_line, None, None
     
-    def extract_version_from_filename(self, filename):
-        """Extract version from filename using regex pattern
-        
-        Args:
-            filename: The application filename (e.g., "msensor_2-1-7.ota" or "occupancy_v3_1-1-5.s37")
-            
-        Returns:
-            tuple: (version_string, decimal_value) or (None, None) if not found
-        """
-        import re
-        
-        # Extract just the filename from the full path
-        basename = os.path.basename(filename)
-        
-        # Multiple regex patterns to try in order
-        patterns = [
-            r'(\d{1,3}[-_]\d{1,3}[-_]\d{1,3})(?=[._])',  # Version followed by dot or underscore (e.g., "1-1-5.s37")
-            r'_(\d{1,3}[-_]\d{1,3}[-_]\d{1,3})(?![-_]\d)', # Version after underscore, not followed by more digits
-            r'(\d{1,3}[-_]\d{1,3}[-_]\d{1,3})',          # Any version pattern
-        ]
-        
-        for pattern in patterns:
-            matches = re.findall(pattern, basename)
-            if matches:
-                # Use the last match (most likely to be the actual version)
-                version_string = matches[-1]
-                
-                # Normalize separators to hyphens for consistency
-                normalized = version_string.replace('_', '-')
-                
-                # Split and convert to decimal using the same formula as JavaScript
-                digits = normalized.split('-')
-                decimal_value = (
-                    int(digits[0]) * 1000000 +
-                    int(digits[1]) * 1000 +
-                    int(digits[2])
-                )
-                
-                # Convert to dot notation for display
-                dot_version = f"{digits[0]}.{digits[1]}.{digits[2]}"
-                
-                return dot_version, decimal_value
-        
-        return None, None
-    
     def program_device_thread(self):
         """Thread function to program the device"""
         try:
             self.debug_log("Programming thread started")
             
             device_display = self.device_var.get()
-            device = self.get_actual_device_name(device_display)
+            device = self.device_manager.get_actual_device_name(device_display)
             app_file = self.app_file_var.get()
             bootloader_file = self.bootloader_file_var.get()
             erase_before_flash = self.erase_before_flash.get()
@@ -1616,7 +1218,7 @@ For support, visit: https://community.silabs.com/"""
                 self.debug_log("Mass erase sequence initiated")
                 self.log("\n=== Mass Erasing Device ===")
                 erase_cmd = [
-                    self.commander_path, "device", "masserase",
+                    "commander", "device", "masserase",
                     "--device", device
                 ]
                 
@@ -1637,7 +1239,7 @@ For support, visit: https://community.silabs.com/"""
                 self.debug_log("Programming bootloader sequence initiated")
                 self.log("\n=== Programming Bootloader ===")
                 boot_cmd = [
-                    self.commander_path, "flash",
+                    "commander", "flash",
                     bootloader_file,
                     "--device", device
                 ]
@@ -1660,7 +1262,7 @@ For support, visit: https://community.silabs.com/"""
             self.debug_log("Programming application sequence initiated")
             self.log("\n=== Programming Application ===")
             app_cmd = [
-                self.commander_path, "flash",
+                "commander", "flash",
                 app_file,
                 "--device", device
             ]
@@ -1676,9 +1278,17 @@ For support, visit: https://community.silabs.com/"""
             self.log("Application programmed successfully!")
             self.debug_log("Application programming completed successfully")
             
-            # Verify application version
+            # Verify application version using file operations manager
             self.debug_log("Starting application version verification")
-            self.verify_app_version(device_display, app_file)
+            verification_result = self.file_operations.verify_application_version(
+                device_display, app_file, self.device_manager
+            )
+            if verification_result['compatible']:
+                self.log(f"Version verification: {verification_result['message']}")
+            else:
+                self.log(f"Version verification warning: {verification_result['message']}")
+            for warning in verification_result.get('warnings', []):
+                self.log(f"WARNING: {warning}")
             
             self.log("\n" + "="*60)
             self.log("Programming completed successfully!")
@@ -1770,6 +1380,69 @@ Version: 2.0
 Built with Python and tkinter"""
         
         messagebox.showinfo("About Zigbee Device Programmer", about_text)
+
+    # Backward compatibility methods for tests
+    def extract_version_from_filename(self, filename):
+        """Proxy to version_parser for backward compatibility"""
+        return self.version_parser.extract_version_from_filename(filename)
+    
+    def verify_app_version(self, device_display, app_file_path):
+        """Proxy to file_operations for backward compatibility"""
+        return self.file_operations.verify_application_version(device_display, app_file_path, self.device_manager)
+    
+    def get_actual_device_name(self, display_name):
+        """Proxy to device_manager for backward compatibility"""
+        return self.device_manager.get_actual_device_name(display_name)
+    
+    def load_device_mapping(self):
+        """Proxy to device_manager for backward compatibility"""
+        return self.device_manager.load_device_mapping()
+    
+    def save_settings(self):
+        """Proxy to device_manager for backward compatibility"""
+        return self.device_manager.save_settings()
+    
+    def load_settings(self):
+        """Proxy to device_manager for backward compatibility"""
+        return self.device_manager.load_settings()
+    
+    def refresh_device_dropdown(self):
+        """Refresh the device dropdown with current mapping"""
+        device_names = self.device_manager.get_device_display_names()
+        self.device_combo['values'] = device_names
+        if device_names and not self.device_var.get():
+            self.device_var.set(device_names[0])
+    
+    @property
+    def device_display_names(self):
+        """Proxy to device_manager for backward compatibility"""
+        return self.device_manager.get_device_display_names()
+    
+    @device_display_names.setter
+    def device_display_names(self, value):
+        """Setter for device_display_names (no-op for backward compatibility)"""
+        # This is just for compatibility - the actual names come from device_mapping
+        pass
+    
+    @property
+    def device_mapping(self):
+        """Proxy to device_manager.device_mapping for backward compatibility"""
+        return self.device_manager.get_device_mapping()
+    
+    @device_mapping.setter
+    def device_mapping(self, value):
+        """Setter for device_mapping to update the manager's mapping"""
+        self.device_manager.device_mapping = value
+    
+    @property 
+    def custom_mapping_path(self):
+        """Proxy to device_manager.custom_mapping_path for backward compatibility"""
+        return self.device_manager.custom_mapping_path
+    
+    @custom_mapping_path.setter
+    def custom_mapping_path(self, value):
+        """Setter for custom_mapping_path to update the manager's path"""
+        self.device_manager.custom_mapping_path = value
 
 
 def main():

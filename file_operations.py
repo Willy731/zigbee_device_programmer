@@ -22,7 +22,7 @@ class FileOperationsManager:
         self._remember_directories = True
     
     def browse_application_file(self, current_path_var):
-        """Browse and select application GBL file
+        """Browse and select application firmware file (GBL, S37, or HEX)
         
         Args:
             current_path_var: tkinter StringVar to update with selected path
@@ -38,9 +38,12 @@ class FileOperationsManager:
             )
             
             filename = filedialog.askopenfilename(
-                title="Select Application GBL File",
+                title="Select Application File",
                 filetypes=[
+                    ("Firmware files", "*.gbl;*.s37;*.hex"),
                     ("GBL files", "*.gbl"),
+                    ("S37 files", "*.s37"),
+                    ("HEX files", "*.hex"),
                     ("All files", "*.*")
                 ],
                 initialdir=initial_dir
@@ -55,7 +58,7 @@ class FileOperationsManager:
                     self._last_app_directory = os.path.dirname(filename)
                 
                 # Validate the selected file
-                validation_result = self._validate_gbl_file(filename, "application")
+                validation_result = self._validate_firmware_file(filename, "application")
                 
                 if validation_result['is_valid']:
                     success_msg = f"Application file selected: {os.path.basename(filename)}"
@@ -67,7 +70,7 @@ class FileOperationsManager:
                     
                     return True, filename, success_msg
                 else:
-                    error_msg = validation_result['error'] or "Invalid GBL file"
+                    error_msg = validation_result['error'] or "Invalid firmware file"
                     messagebox.showerror("Invalid File", error_msg)
                     return False, None, error_msg
             else:
@@ -81,7 +84,7 @@ class FileOperationsManager:
             return False, None, error_msg
     
     def browse_bootloader_file(self, current_path_var):
-        """Browse and select bootloader GBL file
+        """Browse and select bootloader firmware file (S37 or HEX)
         
         Args:
             current_path_var: tkinter StringVar to update with selected path
@@ -97,9 +100,11 @@ class FileOperationsManager:
             )
             
             filename = filedialog.askopenfilename(
-                title="Select Bootloader GBL File",
+                title="Select Bootloader File",
                 filetypes=[
-                    ("GBL files", "*.gbl"),
+                    ("Firmware files", "*.s37;*.hex"),
+                    ("S37 files", "*.s37"),
+                    ("HEX files", "*.hex"),
                     ("All files", "*.*")
                 ],
                 initialdir=initial_dir
@@ -114,7 +119,7 @@ class FileOperationsManager:
                     self._last_bootloader_directory = os.path.dirname(filename)
                 
                 # Validate the selected file
-                validation_result = self._validate_gbl_file(filename, "bootloader")
+                validation_result = self._validate_firmware_file(filename, "bootloader")
                 
                 if validation_result['is_valid']:
                     success_msg = f"Bootloader file selected: {os.path.basename(filename)}"
@@ -126,7 +131,7 @@ class FileOperationsManager:
                     
                     return True, filename, success_msg
                 else:
-                    error_msg = validation_result['error'] or "Invalid GBL file"
+                    error_msg = validation_result['error'] or "Invalid firmware file"
                     messagebox.showerror("Invalid File", error_msg)
                     return False, None, error_msg
             else:
@@ -152,8 +157,8 @@ class FileOperationsManager:
         # Default to current working directory
         return os.getcwd()
     
-    def _validate_gbl_file(self, file_path, file_type):
-        """Validate that the selected file is a valid GBL file
+    def _validate_firmware_file(self, file_path, file_type):
+        """Validate that the selected file is a valid firmware file
         
         Args:
             file_path: Path to the file to validate
@@ -173,10 +178,18 @@ class FileOperationsManager:
                 }
             
             # Check file extension
-            if not file_path.lower().endswith('.gbl'):
+            valid_extensions = []
+            if file_type == "application":
+                valid_extensions = ['.gbl', '.s37', '.hex']
+            elif file_type == "bootloader":
+                valid_extensions = ['.s37', '.hex']
+            
+            file_ext = os.path.splitext(file_path.lower())[1]
+            if file_ext not in valid_extensions:
+                valid_ext_str = ", ".join(valid_extensions)
                 return {
                     'is_valid': False,
-                    'error': f"File must have .gbl extension. Selected: {os.path.basename(file_path)}",
+                    'error': f"File must have one of these extensions: {valid_ext_str}. Selected: {os.path.basename(file_path)}",
                     'version': None,
                     'size_mb': 0
                 }
@@ -230,7 +243,7 @@ class FileOperationsManager:
         
         Args:
             device_display: Display name of selected device
-            app_file_path: Path to application GBL file
+            app_file_path: Path to application firmware file (GBL, S37, or HEX)
             device_manager: DeviceMappingManager instance for device validation
             
         Returns:
@@ -352,7 +365,7 @@ class FileOperationsManager:
         if not os.path.exists(app_file_path):
             return False, f"Application file not found: {app_file_path}"
         
-        app_validation = self._validate_gbl_file(app_file_path, "application")
+        app_validation = self._validate_firmware_file(app_file_path, "application")
         if not app_validation['is_valid']:
             return False, f"Invalid application file: {app_validation['error']}"
         
@@ -364,7 +377,7 @@ class FileOperationsManager:
             if not os.path.exists(bootloader_file_path):
                 return False, f"Bootloader file not found: {bootloader_file_path}"
             
-            bootloader_validation = self._validate_gbl_file(bootloader_file_path, "bootloader")
+            bootloader_validation = self._validate_firmware_file(bootloader_file_path, "bootloader")
             if not bootloader_validation['is_valid']:
                 return False, f"Invalid bootloader file: {bootloader_validation['error']}"
         

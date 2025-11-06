@@ -167,3 +167,7 @@ class DeviceMappingManager:
             return f"Custom mapping: {os.path.basename(self.custom_mapping_path)}"
         else:
             return "device_mapping.json"
+    
+    def get_device_mapping(self):
+        """Return the current device mapping dictionary"""
+        return self.device_mapping.copy()
